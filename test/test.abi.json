@@ -1,0 +1,24 @@
+[
+  {
+    "type": "event",
+    "inputs": [
+      { "name": "a", "type": "uint256", "indexed": true },
+      { "name": "b", "type": "bytes32", "indexed": false }
+    ],
+    "name": "Event"
+  },
+  {
+    "type": "event",
+    "inputs": [
+      { "name": "a", "type": "uint256", "indexed": true },
+      { "name": "b", "type": "bytes32", "indexed": false }
+    ],
+    "name": "Event2"
+  },
+  {
+    "type": "function",
+    "inputs": [{ "name": "a", "type": "uint256" }],
+    "name": "foo",
+    "outputs": []
+  }
+]
