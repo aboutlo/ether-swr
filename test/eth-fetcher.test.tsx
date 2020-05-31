@@ -37,7 +37,8 @@ describe('ethFetcher', () => {
         .fn()
         .mockImplementation(() => Promise.resolve(balance))
       const fetcher = ethFetcher(library)
-      await expect(fetcher(['getBalance'])).resolves.toEqual(balance)
+      // SWR spread the array when it invoke the fetcher
+      await expect(fetcher(...['getBalance'])).resolves.toEqual(balance)
     })
   })
 
@@ -57,9 +58,10 @@ describe('ethFetcher', () => {
       const account = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
       const ABIs = new Map([[contract, TestABI]])
       const fetcher = ethFetcher(library, ABIs)
-      await expect(fetcher([contract, 'balanceOf', account])).resolves.toEqual(
-        balance
-      )
+      // SWR spread the array when it invoke the fetcher
+      await expect(
+        fetcher(...[contract, 'balanceOf', account])
+      ).resolves.toEqual(balance)
     })
   })
 })

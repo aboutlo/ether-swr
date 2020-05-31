@@ -3,10 +3,9 @@ import { Web3Provider } from '@ethersproject/providers'
 import { isAddress } from '@ethersproject/address'
 import { ABIError, ABINotFound } from './Errors'
 
-export const ethFetcher = (
-  library: Web3Provider,
-  ABIs?: Map<string, any>
-) => args => {
+export const ethFetcher = (library: Web3Provider, ABIs?: Map<string, any>) => (
+  ...args
+) => {
   const [arg1, arg2, ...params] = args
   // it's a contract
   if (isAddress(arg1)) {
