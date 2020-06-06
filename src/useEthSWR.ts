@@ -6,8 +6,9 @@ import { isAddress } from '@ethersproject/address'
 import { EthSWRConfigInterface } from './types'
 import EthSWRConfigContext from './eth-swr-config'
 import { useWeb3React } from '@web3-react/core'
+// import { fetcherFn } from 'swr/esm/types'
 
-export declare type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
+// export declare type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
 
 export type ethKeyInterface = [string, any?, any?, any?, any?]
 
@@ -21,28 +22,75 @@ type ethResponseInterface<Data, Error> = { subscribe: any } & responseInterface<
   Data,
   Error
 >*/
-
-export function useEthSWR<Data = any, Error = any>(
+function useEthSWR<Data = any, Error = any>(
+  key: ethKeyInterface
+): responseInterface<Data, Error>
+function useEthSWR<Data = any, Error = any>(
   key: ethKeyInterface,
-  fetcher?: fetcherFn<any>,
-  config?: EthSWRConfigInterface
+  config?: EthSWRConfigInterface<Data, Error>
+): responseInterface<Data, Error>
+function useEthSWR<Data = any, Error = any>(
+  key: ethKeyInterface,
+  fetcher?: any, //fetcherFn<Data>,
+  config?: EthSWRConfigInterface<Data, Error>
+): responseInterface<Data, Error>
+function useEthSWR<Data = any, Error = any>(
+  ...args
 ): responseInterface<Data, Error> {
-  const [arg1, arg2, ...params] = key
+  let _key: ethKeyInterface
+  let fn: any //fetcherFn<Data> | undefined
+  let config: EthSWRConfigInterface<Data, Error> = {}
+
+  if (args.length >= 1) {
+    _key = args[0]
+  }
+  if (args.length > 2) {
+    fn = args[1]
+    config = args[2]
+  } else {
+    if (typeof args[1] === 'function') {
+      fn = args[1]
+    } else if (typeof args[1] === 'object') {
+      config = args[1]
+    }
+  }
+
+  const [target, method, ...params] = _key
 
   const { library } = useWeb3React()
-  console.log('useEthSWR:', arg1, arg2, ...params, { fetcher, config })
+  // console.log('useEthSWR:', { _key, target, method, params, fn, config })
 
   config = Object.assign({}, useContext(EthSWRConfigContext), config)
 
-  if (fetcher === undefined) {
-    fetcher = config.fetcher(library, config.ABIs)
+  if (fn === undefined) {
+    // fn = config.fetcher(library, config.ABIs) as any
+    fn = config.fetcher
   }
 
+  return useSWR(_key, fn, config)
+
+  // const { data, error, revalidate, isValidating, mutate } = useSWR(
+  //   _key,
+  //   fn,
+  //   config
+  // )
+
+  // const [arg1, arg2, arg3] = args
+  // console.log('args:', arg1, arg2, arg3)
+  // const { data, error, revalidate, isValidating, mutate } = useSWR(
+  //   arg1,
+  //   arg2,
+  //   arg3
+  // )
+  // console.log('useSWRL', { data, error })
+  // return { data, error, revalidate, isValidating, mutate }
+
+  /*
   let contract = useMemo(() => {
-    if (!isAddress(arg1)) return null
-    const abi = config.ABIs.get(arg1)
-    new Contract(arg1, abi)
-  }, [arg1])
+    if (!isAddress(target)) return null
+    const abi = config.ABIs.get(target)
+    new Contract(target, abi)
+  }, [target])
 
   useEffect(() => {
     if (!contract) {
@@ -73,7 +121,7 @@ export function useEthSWR<Data = any, Error = any>(
         contract.removeAllListeners(filter)
       })
     }
-  }, [contract])
+  }, [contract])*/
 
   // spread operator will crate a new instance on every render
   // const { data, error, mutate, isValidating, revalidate } = useSWR(
@@ -81,7 +129,7 @@ export function useEthSWR<Data = any, Error = any>(
   //   fetcher,
   //   config
   // )
-  return useSWR(key, fetcher, config)
+  // return { data, error, isValidating, revalidate, mutate }
 
   // return useMemo(() => {
   //   const response: ethResponseInterface<Data, Error> = {
@@ -95,5 +143,6 @@ export function useEthSWR<Data = any, Error = any>(
   //   return response
   // }, [data, error, mutate, isValidating, revalidate])
 }
-
+const EthSWRConfig = EthSWRConfigContext.Provider
+export { EthSWRConfig }
 export default useEthSWR
