@@ -62,7 +62,7 @@ function useEthSWR<Data = any, Error = any>(
     fn = config.fetcher
   }
 
-  const [target] = _key
+  const [target, ...params] = _key
 
   // base methods (e.g. getBalance, getBlockNumber, etc)
   useEffect(() => {
@@ -83,7 +83,7 @@ function useEthSWR<Data = any, Error = any>(
     // FIXME why if I add _key as dependency it doesn't trigger the data refresh?
   }, [config.provider, config.subscribe, target])
 
-  // contract filter
+  // contract filter (e.g. balanceOf, approve, etc)
   useEffect(() => {
     if (!config.provider || !config.subscribe || !isAddress(target))
       return () => ({})
@@ -94,11 +94,27 @@ function useEthSWR<Data = any, Error = any>(
     const subscribers = Array.isArray(config.subscribe)
       ? config.subscribe
       : [config.subscribe]
+
     subscribers.forEach(subscribe => {
-      const filter = contract.filters[subscribe](null, null)
-      contract.on(filter, value => {
-        mutate(_key, undefined, true)
-      })
+      let filter
+      if (typeof subscribe === 'string') {
+        filter = contract.filters[subscribe](null, null)
+        contract.on(filter, value => {
+          // auto refresh
+          mutate(_key, undefined, true)
+        })
+      } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
+        const { name, topics, on } = subscribe
+        filter = contract.filters[name](...topics)
+        contract.on(filter, (...args) => {
+          if (on) {
+            on(cache.get(_key), ...args)
+          } else {
+            // auto refresh
+            mutate(_key, undefined, true)
+          }
+        })
+      }
     })
 
     return () => {
@@ -107,46 +123,7 @@ function useEthSWR<Data = any, Error = any>(
       })
     }
     // FIXME why if I add _key as dependency it doesn't trigger the data refresh?
-  }, [config.provider, config.subscribe, target])
-
-  // let contract = useMemo(() => {
-  //   if (!isAddress(target)) return null
-  //   const abi = config.ABIs.get(target)
-  //   new Contract(target, abi)
-  // }, [target])
-  //
-  // useEffect(() => {
-  //   if (!contract) {
-  //     return () => {
-  //       // dosomething
-  //     }
-  //   }
-  //
-  //   // const config.provider
-  //
-  //   // const [paramWithFilters] = key.filter(p => p.on !== undefined)
-  //   // // FIXME can be an object or an array
-  //   // const filters = Array.isArray(paramWithFilters.on)
-  //   //   ? paramWithFilters.on
-  //   //   : [paramWithFilters.on]
-  //   //
-  //   // filters.forEach(p => {
-  //   //   const [name, ...args] = p
-  //   //   const [callback] = args.filter(arg => typeof arg === 'function')
-  //   //   const filter = contract[name](args)
-  //   //   contract.on(filter, (...topics) => {
-  //   //     callback ? callback(topics) : trigger(key, true)
-  //   //   })
-  //   // })
-  //
-  //   return () => {
-  //     filters.forEach(p => {
-  //       const [name, ...args] = p
-  //       const filter = contract[name](args)
-  //       contract.removeAllListeners(filter)
-  //     })
-  //   }
-  // }, [contract])
+  }, [config.provider, config.subscribe, target, ...params])
 
   return useSWR(_key, fn, config)
 }
