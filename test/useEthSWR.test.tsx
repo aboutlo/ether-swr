@@ -5,12 +5,9 @@ import ERC20ABI from './ERC20.abi.json'
 import * as React from 'react'
 import useSWR from 'swr'
 import { useWeb3React } from '@web3-react/core'
-import { Web3Provider } from '@ethersproject/providers'
 import { Contract } from '@ethersproject/contracts'
 
 import EventEmitterMock from './utils'
-import { Listener } from '@ethersproject/abstract-provider'
-import { EventFilter } from '@ethersproject/contracts/lib.esm'
 
 jest.mock('../src/eth-fetcher')
 jest.mock('@web3-react/core')
@@ -22,18 +19,16 @@ const mockedContract = (Contract as unknown) as jest.Mock
 
 describe('useEthSWR', () => {
   describe('key', () => {
-    beforeEach(() => {
-      cache.clear(false)
+    afterEach(() => {
+      cache.clear()
+      // new EventEmitterMock().removeAllListeners()
+      // mockedEthFetcher.mockReset()
     })
 
     it('resolves using the fetcher passed', async () => {
       const mockData = 10
       mockedEthFetcher.mockImplementation(
-        (library: Web3Provider, ABIs: any) => {
-          return (...args) => {
-            return mockData
-          }
-        }
+        jest.fn(() => jest.fn().mockReturnValue(mockData))
       )
 
       function Page() {
@@ -51,14 +46,9 @@ describe('useEthSWR', () => {
     })
 
     it('resolves using the config', async () => {
-      const mockData = 50
-      // const fetcher = jest.fn(() => mockData)
+      const mockData = 51
       mockedEthFetcher.mockImplementation(
-        (library: Web3Provider, ABIs: any) => {
-          return (...args) => {
-            return mockData
-          }
-        }
+        jest.fn(() => jest.fn().mockReturnValue(mockData))
       )
 
       function Page() {
@@ -78,10 +68,10 @@ describe('useEthSWR', () => {
 
     it('resolves using the context', async () => {
       const mockData = 11111
-      const fetcher = jest.fn(() => mockData)
-      const curledFetcher = jest.fn(() => fetcher)
-
-      mockedEthFetcher.mockImplementation(curledFetcher)
+      // Look convolute bu keep in mind the fetcher is a curled function
+      mockedEthFetcher.mockImplementation(
+        jest.fn(() => jest.fn().mockReturnValue(mockData))
+      )
       mockeduseWeb3React.mockReturnValue({
         active: true,
         library: new EventEmitterMock()
@@ -104,13 +94,13 @@ describe('useEthSWR', () => {
       }
 
       function Page() {
-        const { data } = useEthSWR(['getBalance', 'latest'])
+        // FIXME if this key isn't unique some randome failure due to SWR
+        const { data } = useEthSWR(['getBalance', 'pending'])
         return <div>Balance, {data}</div>
       }
 
       const { container } = render(<Container />)
       expect(mockedEthFetcher).toHaveBeenCalled()
-      expect(fetcher).toHaveBeenCalled()
 
       await waitFor(() =>
         expect(container.firstChild.textContent).toEqual(`Balance, ${mockData}`)
@@ -120,8 +110,9 @@ describe('useEthSWR', () => {
 
   describe('listening', () => {
     describe('base', () => {
-      beforeEach(() => {
-        cache.clear(false)
+      afterEach(() => {
+        cache.clear()
+        // new EventEmitterMock().removeAllListeners()
       })
       it('listens an event', async () => {
         const initialData = 10
@@ -132,7 +123,7 @@ describe('useEthSWR', () => {
             jest
               .fn()
               .mockReturnValueOnce(initialData)
-              .mockReturnValueOnce(initialData + 10)
+              .mockReturnValue(initialData + 10)
           )
         )
 
@@ -168,11 +159,11 @@ describe('useEthSWR', () => {
 
         const { container } = render(<Container />)
 
-        await waitFor(() =>
-          expect(container.firstChild.textContent).toEqual(
-            `Balance, ${initialData}`
-          )
-        )
+        // await waitFor(() =>
+        //   expect(container.firstChild.textContent).toEqual(
+        //     `Balance, ${initialData}`
+        //   )
+        // )
 
         mockedLibrary.emit('block', 1000)
 
@@ -185,8 +176,9 @@ describe('useEthSWR', () => {
     })
 
     describe('contract', () => {
-      beforeEach(() => {
-        cache.clear(false)
+      afterEach(() => {
+        cache.clear()
+        // new EventEmitterMock().removeAllListeners()
       })
       it('listens an event and refresh data', async () => {
         const initialData = 10
@@ -210,7 +202,7 @@ describe('useEthSWR', () => {
         mockedContract.mockImplementation(() => new EventEmitterMock())
 
         function Container() {
-          const { library, active } = useWeb3React()
+          const { library } = useWeb3React()
           return (
             <EthSWRConfig
               value={{
@@ -229,16 +221,9 @@ describe('useEthSWR', () => {
 
         function Page() {
           const { account } = useWeb3React()
-          const { data } = useEthSWR(
-            [
-              '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf',
-              'balanceOf',
-              account
-            ],
-            {
-              subscribe: 'Transfer'
-            }
-          )
+          const { data } = useEthSWR([contractAddr, 'balanceOf', account], {
+            subscribe: 'Transfer'
+          })
           return <div>Balance, {data}</div>
         }
 
@@ -259,9 +244,11 @@ describe('useEthSWR', () => {
           )
         )
       })
+
       it('listens an event with topics and refresh data', async () => {
         const initialData = 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
+        const account = '0x11'
 
         // Look convolute bu keep in mind the fetcher is a curled function
         mockedEthFetcher.mockImplementation(
@@ -269,13 +256,14 @@ describe('useEthSWR', () => {
             jest
               .fn()
               .mockReturnValueOnce(initialData)
-              .mockReturnValueOnce(initialData + 10)
+              .mockReturnValue(initialData + 10)
           )
         )
 
         mockeduseWeb3React.mockReturnValue({
           active: true,
-          library: new EventEmitterMock()
+          library: new EventEmitterMock(),
+          account
         })
 
         mockedContract.mockImplementation(() => new EventEmitterMock())
@@ -323,7 +311,7 @@ describe('useEthSWR', () => {
         )
 
         const contract = mockedContract()
-        contract.emit('Transfer')
+        act(() => contract.emit('Transfer'))
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
@@ -512,56 +500,5 @@ describe('useEthSWR', () => {
         )
       })
     })
-
-    /*
-
-    it('should listen filter', () => {
-      const {
-        result: { current }
-      } = renderHook(() => {
-        type Filter = [string, any?, any?, any?]
-        const filter1: Filter = ['Transfer', '0x01', null]
-        const filter2: Filter = ['Transfer', null, '0x01']
-        return useEthSWR(['getBalance', { on: [filter1, filter2] }])
-      })
-      expect(current.data).toEqual(undefined)
-      expect(current.error).toEqual(undefined)
-      expect(current.isValidating).toBeDefined()
-      expect(current.revalidate).toBeDefined()
-    })
-
-    it('should listen filter', () => {
-      const {
-        result: { current }
-      } = renderHook(() => {
-        type Filter = [string, any?, any?, any?]
-        const filter1: Filter = ['Transfer', '0x01', null]
-        const filter2: Filter = ['Transfer', null, '0x01']
-        const daiContract = '0x1111'
-        const account = '0x00001'
-        return useEthSWR([daiContract, 'balanceOf', account], {
-          subscribe: [filter1, filter2]
-        })
-      })
-      expect(current.data).toEqual(undefined)
-      expect(current.error).toEqual(undefined)
-      expect(current.isValidating).toBeDefined()
-      expect(current.revalidate).toBeDefined()
-    })
-
-    it('should listen filter', () => {
-      const {
-        result: { current }
-      } = renderHook(() => {
-        return useEthSWR(['0x1111', 'balanceOf', '0x001'])
-      })
-      current.subscribe('Transfer', '0x01', null, (state, data, event) => {
-        console.log('onTransfer', state, data, event)
-      })
-      expect(current.data).toEqual(undefined)
-      expect(current.error).toEqual(undefined)
-      expect(current.isValidating).toBeDefined()
-      expect(current.revalidate).toBeDefined()
-    })*/
   })
 })

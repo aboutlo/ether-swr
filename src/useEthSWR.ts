@@ -98,7 +98,7 @@ function useEthSWR<Data = any, Error = any>(
     subscribers.forEach(subscribe => {
       let filter
       if (typeof subscribe === 'string') {
-        filter = contract.filters[subscribe](null, null)
+        filter = contract.filters[subscribe]()
         contract.on(filter, value => {
           // auto refresh
           mutate(_key, undefined, true)

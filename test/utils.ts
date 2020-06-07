@@ -14,7 +14,10 @@ export class EventEmitterMock {
     listeners.push({ name, callback })
   }
 
-  removeAllListeners(name) {
+  removeAllListeners(name = '') {
+    if (!name) {
+      listeners = []
+    }
     listeners = listeners.filter(listener => listener.name === name)
   }
 
