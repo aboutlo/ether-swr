@@ -62,8 +62,10 @@ function useEthSWR<Data = any, Error = any>(
     fn = config.fetcher
   }
 
+  const [target] = _key
+
+  // base methods (e.g. getBalance, getBlockNumber, etc)
   useEffect(() => {
-    const [target] = _key
     if (!config.provider || !config.subscribe || isAddress(target))
       return () => ({})
     const subscribers = Array.isArray(config.subscribe)
@@ -79,7 +81,33 @@ function useEthSWR<Data = any, Error = any>(
       })
     }
     // FIXME why if I add _key as dependency it doesn't trigger the data refresh?
-  }, [config.provider, config.subscribe])
+  }, [config.provider, config.subscribe, target])
+
+  // contract filter
+  useEffect(() => {
+    if (!config.provider || !config.subscribe || !isAddress(target))
+      return () => ({})
+
+    const abi = config.ABIs.get(target)
+    const contract = new Contract(target, abi, config.provider.getSigner())
+
+    const subscribers = Array.isArray(config.subscribe)
+      ? config.subscribe
+      : [config.subscribe]
+    subscribers.forEach(subscribe => {
+      const filter = contract.filters[subscribe](null, null)
+      contract.on(filter, value => {
+        mutate(_key, undefined, true)
+      })
+    })
+
+    return () => {
+      subscribers.forEach(filter => {
+        contract.removeAllListeners(filter)
+      })
+    }
+    // FIXME why if I add _key as dependency it doesn't trigger the data refresh?
+  }, [config.provider, config.subscribe, target])
 
   // let contract = useMemo(() => {
   //   if (!isAddress(target)) return null
@@ -121,80 +149,6 @@ function useEthSWR<Data = any, Error = any>(
   // }, [contract])
 
   return useSWR(_key, fn, config)
-
-  // const { data, error, revalidate, isValidating, mutate } = useSWR(
-  //   _key,
-  //   fn,
-  //   config
-  // )
-
-  // const [arg1, arg2, arg3] = args
-  // console.log('args:', arg1, arg2, arg3)
-  // const { data, error, revalidate, isValidating, mutate } = useSWR(
-  //   arg1,
-  //   arg2,
-  //   arg3
-  // )
-  // console.log('useSWRL', { data, error })
-  // return { data, error, revalidate, isValidating, mutate }
-
-  /*
-  let contract = useMemo(() => {
-    if (!isAddress(target)) return null
-    const abi = config.ABIs.get(target)
-    new Contract(target, abi)
-  }, [target])
-
-  useEffect(() => {
-    if (!contract) {
-      return () => {
-        // dosomething
-      }
-    }
-
-    const [paramWithFilters] = key.filter(p => p.on !== undefined)
-    // FIXME can be an object or an array
-    const filters = Array.isArray(paramWithFilters.on)
-      ? paramWithFilters.on
-      : [paramWithFilters.on]
-
-    filters.forEach(p => {
-      const [name, ...args] = p
-      const [callback] = args.filter(arg => typeof arg === 'function')
-      const filter = contract[name](args)
-      contract.on(filter, (...topics) => {
-        callback ? callback(topics) : trigger(key, true)
-      })
-    })
-
-    return () => {
-      filters.forEach(p => {
-        const [name, ...args] = p
-        const filter = contract[name](args)
-        contract.removeAllListeners(filter)
-      })
-    }
-  }, [contract])*/
-
-  // spread operator will crate a new instance on every render
-  // const { data, error, mutate, isValidating, revalidate } = useSWR(
-  //   key,
-  //   fetcher,
-  //   config
-  // )
-  // return { data, error, isValidating, revalidate, mutate }
-
-  // return useMemo(() => {
-  //   const response: ethResponseInterface<Data, Error> = {
-  //     revalidate,
-  //     data,
-  //     error,
-  //     mutate,
-  //     isValidating,
-  //     subscribe
-  //   }
-  //   return response
-  // }, [data, error, mutate, isValidating, revalidate])
 }
 const EthSWRConfig = EthSWRConfigContext.Provider
 export { EthSWRConfig }

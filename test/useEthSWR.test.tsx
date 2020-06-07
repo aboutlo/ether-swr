@@ -1,17 +1,24 @@
 import { cleanup, render, waitFor, act } from '@testing-library/react'
 import useEthSWR, { EthSWRConfig, ethFetcher, cache } from '../src/'
+import ERC20ABI from './ERC20.abi.json'
 
 import * as React from 'react'
 import useSWR from 'swr'
 import { useWeb3React } from '@web3-react/core'
 import { Web3Provider } from '@ethersproject/providers'
-import LibraryMock from './utils'
+import { Contract } from '@ethersproject/contracts'
+
+import EventEmitterMock from './utils'
+import { Listener } from '@ethersproject/abstract-provider'
+import { EventFilter } from '@ethersproject/contracts/lib.esm'
 
 jest.mock('../src/eth-fetcher')
 jest.mock('@web3-react/core')
+jest.mock('@ethersproject/contracts')
 
 const mockedEthFetcher = ethFetcher as jest.Mock
 const mockeduseWeb3React = useWeb3React as jest.Mock
+const mockedContract = (Contract as unknown) as jest.Mock
 
 afterEach(() => {
   cleanup()
@@ -79,12 +86,16 @@ describe('useEthSWR', () => {
       )
     })
 
-    it('resolvess using the context', async () => {
+    it('resolves using the context', async () => {
       const mockData = 11111
       const fetcher = jest.fn(() => mockData)
       const curledFetcher = jest.fn(() => fetcher)
 
       mockedEthFetcher.mockImplementation(curledFetcher)
+      mockeduseWeb3React.mockReturnValue({
+        active: true,
+        library: new EventEmitterMock()
+      })
 
       function Container() {
         const { library } = useWeb3React()
@@ -119,30 +130,33 @@ describe('useEthSWR', () => {
 
   describe('listening', () => {
     describe('base', () => {
-      it.only('listens an event', async () => {
-        const mockData = 10
-        const fetcher = jest
-          .fn()
-          .mockReturnValueOnce(mockData)
-          .mockReturnValueOnce(mockData + 10)
+      it('listens an event', async () => {
+        const initialData = 10
 
-        const curledFetcher = jest.fn(() => fetcher)
-        const mockedLibrary = new LibraryMock()
+        // Look convolute bu keep in mind the fetcher is a curled function
+        mockedEthFetcher.mockImplementation(
+          jest.fn(() =>
+            jest
+              .fn()
+              .mockReturnValueOnce(initialData)
+              .mockReturnValueOnce(initialData + 10)
+          )
+        )
 
-        mockedEthFetcher.mockImplementation(curledFetcher)
+        const mockedLibrary = new EventEmitterMock()
+
         mockeduseWeb3React.mockReturnValue({
           active: true,
           library: mockedLibrary
         })
 
         function Container() {
-          const { library, active } = useWeb3React()
-          console.log({ active })
+          const { library } = useWeb3React()
           return (
             <EthSWRConfig
               value={{
-                // dedupingInterval: 0,
-                // ABIs: new Map(),  // FIXME is it better?
+                dedupingInterval: 0,
+                ABIs: new Map(),
                 provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
@@ -162,41 +176,44 @@ describe('useEthSWR', () => {
         }
 
         const { container } = render(<Container />)
-        expect(mockedEthFetcher).toHaveBeenCalled()
-        expect(fetcher).toHaveBeenCalled()
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
-            `Balance, ${mockData}`
+            `Balance, ${initialData}`
           )
         )
 
-        mockedLibrary.publish('block', 1000)
+        mockedLibrary.emit('block', 1000)
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
-            `Balance, ${mockData + 10}`
+            `Balance, ${initialData + 10}`
           )
         )
       })
     })
 
     describe('contract', () => {
-      it.skip('listens an event', async () => {
-        const mockData = 10
-        const fetcher = jest
-          .fn()
-          .mockReturnValueOnce(mockData)
-          .mockReturnValueOnce(mockData + 10)
+      it('listens an event', async () => {
+        const initialData = 10
+        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
 
-        const curledFetcher = jest.fn(() => fetcher)
-        const mockedLibrary = new LibraryMock()
+        // Look convolute bu keep in mind the fetcher is a curled function
+        mockedEthFetcher.mockImplementation(
+          jest.fn(() =>
+            jest
+              .fn()
+              .mockReturnValueOnce(initialData)
+              .mockReturnValueOnce(initialData + 10)
+          )
+        )
 
-        mockedEthFetcher.mockImplementation(curledFetcher)
         mockeduseWeb3React.mockReturnValue({
           active: true,
-          library: mockedLibrary
+          library: new EventEmitterMock()
         })
+
+        mockedContract.mockImplementation(() => new EventEmitterMock())
 
         function Container() {
           const { library, active } = useWeb3React()
@@ -205,7 +222,7 @@ describe('useEthSWR', () => {
             <EthSWRConfig
               value={{
                 dedupingInterval: 0,
-                // ABIs: new Map(),  // FIXME is it better?
+                ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
                 provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
@@ -221,7 +238,7 @@ describe('useEthSWR', () => {
           const { account } = useWeb3React()
           const { data } = useEthSWR(
             [
-              '0xDea8D8A8255Fd005Dcd29569e6ade8DE21705fEd',
+              '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf',
               'balanceOf',
               account
             ],
@@ -233,20 +250,19 @@ describe('useEthSWR', () => {
         }
 
         const { container } = render(<Container />)
-        expect(mockedEthFetcher).toHaveBeenCalled()
-        expect(fetcher).toHaveBeenCalled()
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
-            `Balance, ${mockData}`
+            `Balance, ${initialData}`
           )
         )
 
-        mockedLibrary.publish('block', 1000)
+        const contract = mockedContract()
+        contract.emit('Transfer')
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
-            `Balance, ${mockData + 10}`
+            `Balance, ${initialData + 10}`
           )
         )
       })
