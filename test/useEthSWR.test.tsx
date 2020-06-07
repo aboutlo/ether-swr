@@ -20,20 +20,10 @@ const mockedEthFetcher = ethFetcher as jest.Mock
 const mockeduseWeb3React = useWeb3React as jest.Mock
 const mockedContract = (Contract as unknown) as jest.Mock
 
-afterEach(() => {
-  cleanup()
-  act(() => cache.clear(false))
-})
-
 describe('useEthSWR', () => {
   describe('key', () => {
     beforeEach(() => {
-      // console.log('cache', cache.keys())
-      // // act(() => )
-      // // act(() => cache.delete('getBalance', false))
-      //
-      // jest.resetAllMocks()
-      // // console.log('cache', cache.keys())
+      cache.clear(false)
     })
 
     it('resolves using the fetcher passed', async () => {
@@ -47,7 +37,9 @@ describe('useEthSWR', () => {
       )
 
       function Page() {
-        const { data } = useEthSWR(['getBalance'], mockedEthFetcher())
+        const { data } = useEthSWR(['getBalance'], mockedEthFetcher(), {
+          dedupingInterval: 0
+        })
         return <div>Balance, {data}</div>
       }
 
@@ -70,11 +62,9 @@ describe('useEthSWR', () => {
       )
 
       function Page() {
-        // const { data } = useEthSWR(['getBalance'], {
-        //   fetcher: mockedEthFetcher()
-        // })
-        const { data } = useSWR(['getBalance', 'pending'], {
-          fetcher: mockedEthFetcher()
+        const { data } = useSWR(['getBalance'], {
+          fetcher: mockedEthFetcher(),
+          dedupingInterval: 0
         })
         return <div>Balance, {data}</div>
       }
@@ -102,7 +92,7 @@ describe('useEthSWR', () => {
         return (
           <EthSWRConfig
             value={{
-              // dedupingInterval: 0,
+              dedupingInterval: 0,
               // ABIs: new Map(),  // FIXME is it better?
               provider: library, // FIXME is it better?
               fetcher: mockedEthFetcher(library, new Map())
@@ -130,6 +120,9 @@ describe('useEthSWR', () => {
 
   describe('listening', () => {
     describe('base', () => {
+      beforeEach(() => {
+        cache.clear(false)
+      })
       it('listens an event', async () => {
         const initialData = 10
 
@@ -158,8 +151,6 @@ describe('useEthSWR', () => {
                 dedupingInterval: 0,
                 ABIs: new Map(),
                 provider: library, // FIXME is it better?
-                // it could be because the fetcher can receive all the params at once
-                //
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -169,7 +160,7 @@ describe('useEthSWR', () => {
         }
 
         function Page() {
-          const { data } = useEthSWR(['getBalance', 'earliest'], {
+          const { data } = useEthSWR(['getBalance'], {
             subscribe: 'block'
           })
           return <div>Balance, {data}</div>
@@ -194,6 +185,9 @@ describe('useEthSWR', () => {
     })
 
     describe('contract', () => {
+      beforeEach(() => {
+        cache.clear(false)
+      })
       it('listens an event and refresh data', async () => {
         const initialData = 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'

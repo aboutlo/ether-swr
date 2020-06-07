@@ -124,7 +124,6 @@ function useEthSWR<Data = any, Error = any>(
     }
     // FIXME why if I add _key as dependency it doesn't trigger the data refresh?
   }, [config.provider, config.subscribe, target, ...params])
-
   return useSWR(_key, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider
