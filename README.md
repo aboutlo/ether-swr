@@ -1,8 +1,8 @@
-# SWR-eth
+# Ether-SWR
 
 An util to use SWR with Ethereum
 
-[![view on npm](https://img.shields.io/npm/v/swr-eth.svg)](https://www.npmjs.org/package/swr-eth)
+[![view on npm](https://img.shields.io/npm/v/ether-swr.svg)](https://www.npmjs.org/package/ether-swr)
 
 ```typescript
 export const EthBalance = ({ symbol, address, decimals }) => {
@@ -26,7 +26,7 @@ You can use `SWRConfig` to have a global fetcher capable of retrieving basic Eth
 or directly interact with a smart contract
 
 ```js
-import {ethFetcher } from "swr-eth";
+import {ethFetcher } from "ether-swr";
 import {SWRConfig} from "swr";
 import ERC20ABI from "../abi/ERC20.abi.json";
 import {EthBalance} from "./EthBalance";

@@ -1,6 +1,6 @@
 {
-  "name": "swr-eth",
-  "version": "0.1.2",
+  "name": "ether-swr",
+  "version": "0.2.0",
   "description": "React Hooks library for Ethereum remote data fetching",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
@@ -10,7 +10,7 @@
     "dist/**",
     "esm/**"
   ],
-  "repository": "aboutlo/swr-eth",
+  "repository": "aboutlo/ether-swr",
   "license": "MIT",
   "scripts": {
     "build": "npm run build:esm && npm run build:cjs",
@@ -37,8 +37,8 @@
   },
   "devDependencies": {
     "@ethersproject/address": "5.0.0-beta.135",
-    "@ethersproject/contracts": "5.0.0-beta.153",
-    "@ethersproject/providers": "5.0.0-beta.168",
+    "@ethersproject/contracts": "5.0.0-beta.156",
+    "@ethersproject/providers": "5.0.0-beta.171",
     "@ethersproject/units": "5.0.0-beta.133",
     "@testing-library/react": "9.3.0",
     "@types/jest": "24.0.20",
@@ -65,8 +65,8 @@
   "dependencies": {},
   "peerDependencies": {
     "@ethersproject/address": "5.0.0-beta.135",
-    "@ethersproject/contracts": "5.0.0-beta.153",
-    "@ethersproject/providers": "5.0.0-beta.168",
+    "@ethersproject/contracts": "5.0.0-beta.156",
+    "@ethersproject/providers": "5.0.0-beta.171",
     "react": "^16.11.0",
     "swr": "0.2.2"
   }
