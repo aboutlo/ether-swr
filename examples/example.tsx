@@ -6,7 +6,7 @@ import useSWR, { SWRConfig } from 'swr'
 import { formatEther, formatUnits } from '@ethersproject/units'
 import { Contract } from '@ethersproject/contracts'
 import ERC20ABI from './ERC20.abi.json'
-import ethFetcher from '../src'
+import { ethFetcher } from '../src'
 
 export const Networks = {
   MainNet: 1,

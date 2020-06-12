@@ -84,7 +84,7 @@ describe('useEthSWR', () => {
             value={{
               dedupingInterval: 0,
               // ABIs: new Map(),  // FIXME is it better?
-              provider: library, // FIXME is it better?
+              web3Provider: library, // FIXME is it better?
               fetcher: mockedEthFetcher(library, new Map())
             }}
           >
@@ -141,7 +141,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -208,7 +208,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
@@ -275,7 +275,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
@@ -352,7 +352,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
@@ -441,7 +441,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
@@ -467,9 +467,10 @@ describe('useEthSWR', () => {
                   name: 'Transfer',
                   topics: [null, account],
                   on: callback.mockImplementation(
+                    // currentData, all the props from the event
                     (data, fromAddress, toAddress, amount, event) => {
                       const update = data + amount
-                      mutate(update, false) // optimist update skip re-fetch
+                      mutate(update, false) // optimistic update skip re-fetch
                     }
                   )
                 }

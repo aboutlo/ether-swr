@@ -6,7 +6,7 @@ import { isAddress } from '@ethersproject/address'
 import { EthSWRConfigInterface } from './types'
 import EthSWRConfigContext from './eth-swr-config'
 import { useWeb3React } from '@web3-react/core'
-// import { fetcherFn } from 'swr/esm/types'
+import { ethFetcher } from './eth-fetcher'
 
 // export declare type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
 export { cache } from 'swr'
@@ -59,37 +59,36 @@ function useEthSWR<Data = any, Error = any>(
 
   if (fn === undefined) {
     // fn = config.fetcher(library, config.ABIs) as any
-    fn = config.fetcher
+    fn = config.fetcher || ethFetcher(config.web3Provider, config.ABIs)
   }
 
   const [target, ...params] = _key
 
   // base methods (e.g. getBalance, getBlockNumber, etc)
   useEffect(() => {
-    if (!config.provider || !config.subscribe || isAddress(target))
+    if (!config.web3Provider || !config.subscribe || isAddress(target))
       return () => ({})
     const subscribers = Array.isArray(config.subscribe)
       ? config.subscribe
       : [config.subscribe]
     subscribers.forEach(filter => {
-      config.provider.on(filter, () => mutate(_key, undefined, true))
+      config.web3Provider.on(filter, () => mutate(_key, undefined, true))
     })
 
     return () => {
       subscribers.forEach(filter => {
-        config.provider.removeAllListeners(filter)
+        config.web3Provider.removeAllListeners(filter)
       })
     }
-    // FIXME why if I add _key as dependency it doesn't trigger the data refresh?
-  }, [config.provider, config.subscribe, target])
+  }, [config.web3Provider, config.subscribe, target])
 
   // contract filter (e.g. balanceOf, approve, etc)
   useEffect(() => {
-    if (!config.provider || !config.subscribe || !isAddress(target))
+    if (!config.web3Provider || !config.subscribe || !isAddress(target))
       return () => ({})
 
     const abi = config.ABIs.get(target)
-    const contract = new Contract(target, abi, config.provider.getSigner())
+    const contract = new Contract(target, abi, config.web3Provider.getSigner())
 
     const subscribers = Array.isArray(config.subscribe)
       ? config.subscribe
@@ -122,8 +121,7 @@ function useEthSWR<Data = any, Error = any>(
         contract.removeAllListeners(filter)
       })
     }
-    // FIXME why if I add _key as dependency it doesn't trigger the data refresh?
-  }, [config.provider, config.subscribe, target, ...params])
+  }, [config.web3Provider, config.subscribe, target, ...params])
   return useSWR(_key, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider

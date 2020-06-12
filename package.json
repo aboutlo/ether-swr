@@ -1,6 +1,6 @@
 {
   "name": "ether-swr",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "React Hooks library for Ethereum remote data fetching",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
@@ -14,7 +14,7 @@
   "license": "MIT",
   "scripts": {
     "build": "npm run build:esm && npm run build:cjs",
-    "build:cjs": "ncc build src/index.ts -o dist -m -e react -e swr",
+    "build:cjs": "ncc build src/index.ts -o dist -m -e react -e swr -e web3-react -e Web3Provider",
     "build:esm": "tsc --target ESNext --module ES6 --outDir esm",
     "start": "jest --watch --verbose",
     "types:check": "tsc --noEmit",
@@ -62,6 +62,7 @@
     "react-dom": "16.11.0",
     "react-test-library": "0.0.1",
     "react-test-renderer": "16.13.1",
+    "serve": "11.3.1",
     "swr": "0.2.2",
     "ts-jest": "26.1.0",
     "typescript": "3.9.3"
