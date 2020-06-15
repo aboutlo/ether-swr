@@ -1,6 +1,6 @@
 {
   "name": "ether-swr",
-  "version": "0.3.2",
+  "version": "0.4.0-rc1",
   "description": "React Hooks library for Ethereum remote data fetching",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
@@ -14,7 +14,7 @@
   "license": "MIT",
   "scripts": {
     "build": "npm run build:esm && npm run build:cjs",
-    "build:cjs": "ncc build src/index.ts -o dist -m -e react -e swr -e web3-react -e Web3Provider",
+    "build:cjs": "ncc build src/index.ts  -s -o dist -m -e react -e react-dom -e swr -e web3-react -e Web3Provider",
     "build:esm": "tsc --target ESNext --module ES6 --outDir esm",
     "start": "jest --watch --verbose",
     "types:check": "tsc --noEmit",
@@ -33,7 +33,8 @@
       "npm run lint:fix",
       "npm run format",
       "git add"
-    ]
+    ],
+    "ignore": ["examples"]
   },
   "devDependencies": {
     "@ethersproject/address": "5.0.0-beta.135",
@@ -53,13 +54,14 @@
     "@zeit/ncc": "0.20.5",
     "eslint": "6.6.0",
     "eslint-config-prettier": "6.5.0",
+    "eslint-plugin-react-hooks": "4.0.4",
     "husky": "2.4.1",
     "jest": "26.0.1",
     "jest-environment-jsdom-sixteen": "1.0.3",
     "lint-staged": "8.2.1",
     "prettier": "1.18.2",
     "react": "16.13.1",
-    "react-dom": "16.11.0",
+    "react-dom": "16.13.1",
     "react-test-library": "0.0.1",
     "react-test-renderer": "16.13.1",
     "serve": "11.3.1",
@@ -67,11 +69,15 @@
     "ts-jest": "26.1.0",
     "typescript": "3.9.3"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ether-swr": "0.4.0-rc1"
+  },
   "peerDependencies": {
     "@ethersproject/address": "5.0.0-beta.135",
     "@ethersproject/contracts": "5.0.0-beta.156",
     "@ethersproject/providers": "5.0.0-beta.171",
+    "@web3-react/core": "6.0.9",
+    "@web3-react/injected-connector": "6.0.7",
     "react": "16.13.1",
     "swr": "0.2.2"
   }

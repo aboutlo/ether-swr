@@ -8,20 +8,9 @@ import EthSWRConfigContext from './eth-swr-config'
 import { useWeb3React } from '@web3-react/core'
 import { ethFetcher } from './eth-fetcher'
 
-// export declare type fetcherFn<Data> = (...args: any) => Data | Promise<Data>
 export { cache } from 'swr'
 export type ethKeyInterface = [string, any?, any?, any?, any?]
 
-/*export const subscribe = contract => (event: string, params: any[]) => {
-  console.log(contract)
-  console.log(event, params)
-  return null
-}
-
-type ethResponseInterface<Data, Error> = { subscribe: any } & responseInterface<
-  Data,
-  Error
->*/
 function useEthSWR<Data = any, Error = any>(
   key: ethKeyInterface
 ): responseInterface<Data, Error>

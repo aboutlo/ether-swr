@@ -66,7 +66,7 @@ describe('EtherSWRConfig', () => {
     function Page() {
       const { account } = useWeb3React()
       const { data, mutate } = useEthSWR(
-        ['0x6126A4C0Eb7822C12Bea32327f1706F035b414bf', 'balanceOf', account],
+        [contractAddr, 'balanceOf', account],
         {
           // A filter from anyone to me
           subscribe: [
@@ -98,11 +98,12 @@ describe('EtherSWRConfig', () => {
     const contract = mockedContract()
     act(() => {
       contract.emit('Transfer', null, account, amount, {})
+      contract.emit('Transfer', null, account, amount, {})
     })
 
     await waitFor(() =>
       expect(container.firstChild.textContent).toEqual(
-        `Balance, ${initialData + amount + amount}`
+        `Balance, ${initialData + amount * 2 }`
       )
     )
   })
