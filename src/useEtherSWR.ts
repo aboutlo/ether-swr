@@ -50,7 +50,7 @@ function useEtherSWR<Data = any, Error = any>(
     fn = config.fetcher || ethFetcher(config.web3Provider, config.ABIs)
   }
 
-  const [target, ...params] = _key
+  const [target] = _key
 
   // base methods (e.g. getBalance, getBlockNumber, etc)
   useEffect(() => {
@@ -68,14 +68,19 @@ function useEtherSWR<Data = any, Error = any>(
         config.web3Provider.removeAllListeners(filter)
       })
     }
-  }, [config.web3Provider, config.subscribe, target])
+  }, [/*config.web3Provider, config.subscribe,*/ _key])
 
   // contract filter (e.g. balanceOf, approve, etc)
   useEffect(() => {
-    if (!config.web3Provider || !config.subscribe || !isAddress(target))
+    if (!config.web3Provider || !config.subscribe || !isAddress(target)) {
       return () => ({})
+    }
 
     const abi = config.ABIs.get(target)
+    console.log('useEffect configure', _key)
+    if (!abi) {
+      throw new Error(`Missing ABI for ${target}`)
+    }
     const contract = new Contract(target, abi, config.web3Provider.getSigner())
 
     const subscribers = Array.isArray(config.subscribe)
@@ -106,10 +111,13 @@ function useEtherSWR<Data = any, Error = any>(
 
     return () => {
       subscribers.forEach(filter => {
+        // FIXME the filter need to be unwrap to find the listner as for above
         contract.removeAllListeners(filter)
       })
     }
-  }, [config.web3Provider, config.subscribe, target, ...params])
+    // }, [config.web3Provider.network.chainId, config.subscribe, _key.join('|')])
+    // FIXME revalidate if network change
+  }, [_key.join('|')])
   return useSWR(_key, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider

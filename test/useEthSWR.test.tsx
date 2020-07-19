@@ -173,6 +173,123 @@ describe('useEthSWR', () => {
           )
         )
       })
+      it('listens a list of events', async () => {
+        const initialData = 10
+
+        // Look convolute bu keep in mind the fetcher is a curled function
+        mockedEthFetcher.mockImplementation(
+          jest.fn(() =>
+            jest
+              .fn()
+              .mockReturnValueOnce(initialData)
+              .mockReturnValue(initialData + 10)
+          )
+        )
+
+        const mockedLibrary = new EventEmitterMock()
+
+        mockeduseWeb3React.mockReturnValue({
+          active: true,
+          library: mockedLibrary
+        })
+
+        function Container() {
+          const { library } = useWeb3React()
+          return (
+            <EthSWRConfig
+              value={{
+                dedupingInterval: 0,
+                ABIs: new Map(),
+                web3Provider: library, // FIXME is it better?
+                fetcher: mockedEthFetcher(library, new Map())
+              }}
+            >
+              <Page />
+            </EthSWRConfig>
+          )
+        }
+
+        function Page() {
+          const { data } = useEthSWR(['getBalance'], {
+            subscribe: [
+              {
+                name: 'block'
+              }
+            ]
+          })
+          return <div>Balance, {data}</div>
+        }
+
+        const { container } = render(<Container />)
+
+        mockedLibrary.emit('block', 1000)
+
+        await waitFor(() =>
+          expect(container.firstChild.textContent).toEqual(
+            `Balance, ${initialData + 10}`
+          )
+        )
+      })
+      it('listens a list of events and invoke the callback', async () => {
+        const initialData = 10
+        const callback = jest.fn()
+
+        // Look convolute bu keep in mind the fetcher is a curled function
+        mockedEthFetcher.mockImplementation(
+          jest.fn(() =>
+            jest
+              .fn()
+              .mockReturnValueOnce(initialData)
+              .mockReturnValue(initialData + 10)
+          )
+        )
+
+        const mockedLibrary = new EventEmitterMock()
+
+        mockeduseWeb3React.mockReturnValue({
+          active: true,
+          library: mockedLibrary
+        })
+
+        function Container() {
+          const { library } = useWeb3React()
+          return (
+            <EthSWRConfig
+              value={{
+                dedupingInterval: 0,
+                ABIs: new Map(),
+                web3Provider: library, // FIXME is it better?
+                fetcher: mockedEthFetcher(library, new Map())
+              }}
+            >
+              <Page />
+            </EthSWRConfig>
+          )
+        }
+
+        function Page() {
+          const { data } = useEthSWR(['getBalance'], {
+            subscribe: [
+              {
+                name: 'block',
+                on: callback
+              }
+            ]
+          })
+          return <div>Balance, {data}</div>
+        }
+
+        const { container } = render(<Container />)
+
+        mockedLibrary.emit('block', 1000)
+
+        await waitFor(() => {
+          expect(container.firstChild.textContent).toEqual(
+            `Balance, ${initialData + 10}`
+          )
+          expect(callback).toHaveBeenCalled()
+        })
+      })
     })
 
     describe('contract', () => {
