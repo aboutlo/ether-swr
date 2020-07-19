@@ -1,29 +1,28 @@
-import { useContext, useEffect, useMemo } from 'react'
-import useSWR, { trigger, cache, mutate } from 'swr'
+import { useContext, useEffect } from 'react'
+import useSWR, { cache, mutate } from 'swr'
 import { responseInterface } from 'swr'
 import { Contract } from '@ethersproject/contracts'
 import { isAddress } from '@ethersproject/address'
 import { EthSWRConfigInterface } from './types'
 import EthSWRConfigContext from './eth-swr-config'
-import { useWeb3React } from '@web3-react/core'
 import { ethFetcher } from './eth-fetcher'
 
 export { cache } from 'swr'
 export type ethKeyInterface = [string, any?, any?, any?, any?]
 
-function useEthSWR<Data = any, Error = any>(
+function useEtherSWR<Data = any, Error = any>(
   key: ethKeyInterface
 ): responseInterface<Data, Error>
-function useEthSWR<Data = any, Error = any>(
+function useEtherSWR<Data = any, Error = any>(
   key: ethKeyInterface,
   config?: EthSWRConfigInterface<Data, Error>
 ): responseInterface<Data, Error>
-function useEthSWR<Data = any, Error = any>(
+function useEtherSWR<Data = any, Error = any>(
   key: ethKeyInterface,
   fetcher?: any, //fetcherFn<Data>,
   config?: EthSWRConfigInterface<Data, Error>
 ): responseInterface<Data, Error>
-function useEthSWR<Data = any, Error = any>(
+function useEtherSWR<Data = any, Error = any>(
   ...args
 ): responseInterface<Data, Error> {
   let _key: ethKeyInterface
@@ -116,4 +115,4 @@ function useEthSWR<Data = any, Error = any>(
 const EthSWRConfig = EthSWRConfigContext.Provider
 export { EthSWRConfig }
 
-export default useEthSWR
+export default useEtherSWR

@@ -65,25 +65,22 @@ describe('EtherSWRConfig', () => {
 
     function Page() {
       const { account } = useWeb3React()
-      const { data, mutate } = useEthSWR(
-        [contractAddr, 'balanceOf', account],
-        {
-          // A filter from anyone to me
-          subscribe: [
-            {
-              name: 'Transfer',
-              topics: [null, account],
-              on: callback.mockImplementation(
-                // currentData, all the props from the event
-                (data, fromAddress, toAddress, amount, event) => {
-                  const update = data + amount
-                  mutate(update, false) // optimistic update skip re-fetch
-                }
-              )
-            }
-          ]
-        }
-      )
+      const { data, mutate } = useEthSWR([contractAddr, 'balanceOf', account], {
+        // A filter from anyone to me
+        subscribe: [
+          {
+            name: 'Transfer',
+            topics: [null, account],
+            on: callback.mockImplementation(
+              // currentData, all the props from the event
+              (data, fromAddress, toAddress, amount, event) => {
+                const update = data + amount
+                mutate(update, false) // optimistic update skip re-fetch
+              }
+            )
+          }
+        ]
+      })
       return <div>Balance, {data}</div>
     }
 
@@ -103,7 +100,7 @@ describe('EtherSWRConfig', () => {
 
     await waitFor(() =>
       expect(container.firstChild.textContent).toEqual(
-        `Balance, ${initialData + amount * 2 }`
+        `Balance, ${initialData + amount * 2}`
       )
     )
   })
