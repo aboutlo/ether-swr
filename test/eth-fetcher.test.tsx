@@ -1,11 +1,3 @@
-/*import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  waitForDomChange
-} from '@testing-library/react'*/
-
 import { ethFetcher } from '../src'
 import { Web3Provider } from '@ethersproject/providers'
 import { Contract } from '@ethersproject/contracts'

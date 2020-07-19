@@ -1,7 +1,7 @@
 import { useContext, useEffect } from 'react'
 import useSWR, { cache, mutate } from 'swr'
 import { responseInterface } from 'swr'
-import { Contract } from '@ethersproject/contracts'
+import { Contract } from 'ethers'
 import { isAddress } from '@ethersproject/address'
 import { EthSWRConfigInterface } from './types'
 import EthSWRConfigContext from './eth-swr-config'

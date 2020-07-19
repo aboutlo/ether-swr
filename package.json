@@ -37,10 +37,7 @@
     ]
   },
   "devDependencies": {
-    "@ethersproject/address": "5.0.0-beta.135",
-    "@ethersproject/contracts": "5.0.0-beta.156",
-    "@ethersproject/providers": "5.0.0-beta.171",
-    "@ethersproject/units": "5.0.0-beta.133",
+    "ethers": "~5.0.0",
     "@testing-library/jest-dom": "5.9.0",
     "@testing-library/react": "10.2.1",
     "@testing-library/react-hooks": "3.2.1",
@@ -69,13 +66,8 @@
     "ts-jest": "26.1.0",
     "typescript": "3.9.3"
   },
-  "dependencies": {
-    "ether-swr": "0.4.0-rc1"
-  },
   "peerDependencies": {
-    "@ethersproject/address": "5.0.0-beta.135",
-    "@ethersproject/contracts": "5.0.0-beta.156",
-    "@ethersproject/providers": "5.0.0-beta.171",
+    "ethers": "~5.0.0",
     "@web3-react/core": "6.0.9",
     "@web3-react/injected-connector": "6.0.7",
     "react": "16.13.1",
