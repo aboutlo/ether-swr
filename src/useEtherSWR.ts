@@ -51,16 +51,34 @@ function useEtherSWR<Data = any, Error = any>(
   }
 
   const [target] = _key
+  const joinKey = _key.join('|')
 
   // base methods (e.g. getBalance, getBlockNumber, etc)
+  // FIXME merge in only one useEffect
   useEffect(() => {
     if (!config.web3Provider || !config.subscribe || isAddress(target))
       return () => ({})
     const subscribers = Array.isArray(config.subscribe)
       ? config.subscribe
       : [config.subscribe]
-    subscribers.forEach(filter => {
-      config.web3Provider.on(filter, () => mutate(_key, undefined, true))
+
+    subscribers.forEach(subscribe => {
+      let filter
+      if (typeof subscribe === 'string') {
+        filter = subscribe
+        config.web3Provider.on(filter, () => mutate(_key, undefined, true))
+      } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
+        const { name, on } = subscribe
+        filter = name
+        config.web3Provider.on(filter, (...args) => {
+          if (on) {
+            on(cache.get(_key), ...args)
+          } else {
+            // auto refresh
+            mutate(_key, undefined, true)
+          }
+        })
+      }
     })
 
     return () => {
@@ -68,16 +86,17 @@ function useEtherSWR<Data = any, Error = any>(
         config.web3Provider.removeAllListeners(filter)
       })
     }
-  }, [/*config.web3Provider, config.subscribe,*/ _key])
+  }, [_key, target, config.web3Provider, config.subscribe, config.ABIs])
 
   // contract filter (e.g. balanceOf, approve, etc)
+  // FIXME merge in only one useEffect
   useEffect(() => {
     if (!config.web3Provider || !config.subscribe || !isAddress(target)) {
       return () => ({})
     }
 
     const abi = config.ABIs.get(target)
-    console.log('useEffect configure', _key)
+    // console.log('useEffect configure', _key)
     if (!abi) {
       throw new Error(`Missing ABI for ${target}`)
     }
@@ -111,13 +130,13 @@ function useEtherSWR<Data = any, Error = any>(
 
     return () => {
       subscribers.forEach(filter => {
-        // FIXME the filter need to be unwrap to find the listner as for above
+        // FIXME the filter need to be unwrap to find the listener as for above
         contract.removeAllListeners(filter)
       })
     }
     // }, [config.web3Provider.network.chainId, config.subscribe, _key.join('|')])
     // FIXME revalidate if network change
-  }, [_key.join('|')])
+  }, [_key, target, config.web3Provider, config.subscribe, config.ABIs])
   return useSWR(_key, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider

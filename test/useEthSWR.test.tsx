@@ -268,11 +268,16 @@ describe('useEthSWR', () => {
         }
 
         function Page() {
-          const { data } = useEthSWR(['getBalance'], {
+          const { data, mutate } = useEthSWR(['getBalance'], {
             subscribe: [
               {
                 name: 'block',
-                on: callback
+                on: callback.mockImplementation(
+                  // force a refresh of getBalance
+                  () => {
+                    mutate(undefined, true)
+                  }
+                )
               }
             ]
           })
@@ -280,6 +285,12 @@ describe('useEthSWR', () => {
         }
 
         const { container } = render(<Container />)
+
+        await waitFor(() =>
+          expect(container.firstChild.textContent).toEqual(
+            `Balance, ${initialData}`
+          )
+        )
 
         mockedLibrary.emit('block', 1000)
 
@@ -307,7 +318,7 @@ describe('useEthSWR', () => {
             jest
               .fn()
               .mockReturnValueOnce(initialData)
-              .mockReturnValueOnce(initialData + 10)
+              .mockReturnValue(initialData + 10)
           )
         )
 

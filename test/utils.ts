@@ -1,9 +1,12 @@
 // make it singleton for testing purpose
-let listeners = []
+type Listener = { name: string; callback: (args?: any[]) => any }
+
+let listeners: Listener[] = []
 
 export class EventEmitterMock {
   public filters = {
-    Transfer: jest.fn(() => 'Transfer')
+    Transfer: jest.fn(() => 'Transfer'),
+    block: jest.fn(() => 'block')
   }
 
   getSigner() {
@@ -12,6 +15,15 @@ export class EventEmitterMock {
 
   on(name: string, callback) {
     listeners.push({ name, callback })
+  }
+
+  once(name: string, callback) {
+    const existingListeners = listeners.filter(
+      listener => listener.name === name && listener.callback === callback
+    )
+    if (existingListeners.length === 0) {
+      listeners.push({ name, callback })
+    }
   }
 
   removeAllListeners(name = '') {
