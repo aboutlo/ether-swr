@@ -1,6 +1,6 @@
 {
   "name": "ether-swr",
-  "version": "0.4.0-rc1",
+  "version": " 0.4.0-rc4",
   "description": "React Hooks library for Ethereum remote data fetching",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
@@ -37,7 +37,6 @@
     ]
   },
   "devDependencies": {
-    "ethers": "~5.0.0",
     "@testing-library/jest-dom": "5.9.0",
     "@testing-library/react": "10.2.1",
     "@testing-library/react-hooks": "3.2.1",
@@ -52,6 +51,7 @@
     "eslint": "6.6.0",
     "eslint-config-prettier": "6.5.0",
     "eslint-plugin-react-hooks": "4.0.4",
+    "ethers": "~5.0.0",
     "husky": "2.4.1",
     "jest": "26.0.1",
     "jest-environment-jsdom-sixteen": "1.0.3",
@@ -67,9 +67,9 @@
     "typescript": "3.9.3"
   },
   "peerDependencies": {
-    "ethers": "~5.0.0",
     "@web3-react/core": "6.0.9",
     "@web3-react/injected-connector": "6.0.7",
+    "ethers": "~5.0.0",
     "react": "16.13.1",
     "swr": "0.2.2"
   }
