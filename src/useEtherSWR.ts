@@ -51,6 +51,8 @@ function useEtherSWR<Data = any, Error = any>(
   }
 
   const [target] = _key
+  // we need to serialize the key as string otherwise
+  // a new array is created everytime the component is rendered
   const joinKey = _key.join('|')
 
   // base methods (e.g. getBalance, getBlockNumber, etc)
@@ -66,16 +68,16 @@ function useEtherSWR<Data = any, Error = any>(
       let filter
       if (typeof subscribe === 'string') {
         filter = subscribe
-        config.web3Provider.on(filter, () => mutate(_key, undefined, true))
+        config.web3Provider.on(filter, () => mutate(joinKey, undefined, true))
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
         const { name, on } = subscribe
         filter = name
         config.web3Provider.on(filter, (...args) => {
           if (on) {
-            on(cache.get(_key), ...args)
+            on(cache.get(joinKey), ...args)
           } else {
             // auto refresh
-            mutate(_key, undefined, true)
+            mutate(joinKey, undefined, true)
           }
         })
       }
@@ -86,7 +88,7 @@ function useEtherSWR<Data = any, Error = any>(
         config.web3Provider.removeAllListeners(filter)
       })
     }
-  }, [_key, target, config.web3Provider, config.subscribe, config.ABIs])
+  }, [joinKey, target, config.web3Provider, config.subscribe, config.ABIs])
 
   // contract filter (e.g. balanceOf, approve, etc)
   // FIXME merge in only one useEffect
@@ -112,17 +114,17 @@ function useEtherSWR<Data = any, Error = any>(
         filter = contract.filters[subscribe]()
         contract.on(filter, value => {
           // auto refresh
-          mutate(_key, undefined, true)
+          mutate(joinKey, undefined, true)
         })
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
         const { name, topics, on } = subscribe
         filter = contract.filters[name](...topics)
         contract.on(filter, (...args) => {
           if (on) {
-            on(cache.get(_key), ...args)
+            on(cache.get(joinKey), ...args)
           } else {
             // auto refresh
-            mutate(_key, undefined, true)
+            mutate(joinKey, undefined, true)
           }
         })
       }
@@ -134,10 +136,9 @@ function useEtherSWR<Data = any, Error = any>(
         contract.removeAllListeners(filter)
       })
     }
-    // }, [config.web3Provider.network.chainId, config.subscribe, _key.join('|')])
     // FIXME revalidate if network change
-  }, [_key, target, config.web3Provider, config.subscribe, config.ABIs])
-  return useSWR(_key, fn, config)
+  }, [joinKey, target, config.web3Provider, config.subscribe, config.ABIs])
+  return useSWR(joinKey, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider
 export { EthSWRConfig }

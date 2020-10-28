@@ -26,6 +26,7 @@ describe('EtherSWRConfig', () => {
   it('configures the default fetcher', async () => {
     const initialData = 10
     const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
+    const contractInstance = new EventEmitterMock()
     const account = '0x001'
     const amount = 50
     const callback = jest.fn()
@@ -46,7 +47,7 @@ describe('EtherSWRConfig', () => {
       account
     })
 
-    mockedContract.mockImplementation(() => new EventEmitterMock())
+    mockedContract.mockImplementation(() => contractInstance)
 
     function Container() {
       const { library, active } = useWeb3React()

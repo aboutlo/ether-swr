@@ -167,11 +167,12 @@ describe('useEthSWR', () => {
 
         mockedLibrary.emit('block', 1000)
 
-        await waitFor(() =>
+        await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${initialData + 10}`
           )
-        )
+          expect(mockedLibrary.listenerCount('block')).toEqual(1)
+        })
       })
       it('listens a list of events', async () => {
         const initialData = 10
@@ -224,11 +225,12 @@ describe('useEthSWR', () => {
 
         mockedLibrary.emit('block', 1000)
 
-        await waitFor(() =>
+        await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${initialData + 10}`
           )
-        )
+          expect(mockedLibrary.listenerCount('block')).toEqual(1)
+        })
       })
       it('listens a list of events and invoke the callback', async () => {
         const initialData = 10
@@ -299,6 +301,7 @@ describe('useEthSWR', () => {
             `Balance, ${initialData + 10}`
           )
           expect(callback).toHaveBeenCalled()
+          expect(mockedLibrary.listenerCount('block')).toEqual(1)
         })
       })
     })
@@ -311,6 +314,7 @@ describe('useEthSWR', () => {
       it('listens an event and refresh data', async () => {
         const initialData = 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
+        const contractInstance = new EventEmitterMock()
 
         // Look convolute bu keep in mind the fetcher is a curled function
         mockedEthFetcher.mockImplementation(
@@ -327,7 +331,7 @@ describe('useEthSWR', () => {
           library: new EventEmitterMock()
         })
 
-        mockedContract.mockImplementation(() => new EventEmitterMock())
+        mockedContract.mockImplementation(() => contractInstance)
 
         function Container() {
           const { library } = useWeb3React()
@@ -366,17 +370,19 @@ describe('useEthSWR', () => {
         const contract = mockedContract()
         contract.emit('Transfer')
 
-        await waitFor(() =>
+        await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${initialData + 10}`
           )
-        )
+          expect(contract.listenerCount('Transfer')).toEqual(1)
+        })
       })
 
       it('listens an event with topics and refresh data', async () => {
         const initialData = 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
         const account = '0x11'
+        const contractInstance = new EventEmitterMock()
 
         // Look convolute bu keep in mind the fetcher is a curled function
         mockedEthFetcher.mockImplementation(
@@ -394,7 +400,7 @@ describe('useEthSWR', () => {
           account
         })
 
-        mockedContract.mockImplementation(() => new EventEmitterMock())
+        mockedContract.mockImplementation(() => contractInstance)
 
         function Container() {
           const { library, active } = useWeb3React()
@@ -441,16 +447,18 @@ describe('useEthSWR', () => {
         const contract = mockedContract()
         act(() => contract.emit('Transfer'))
 
-        await waitFor(() =>
+        await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${initialData + 10}`
           )
-        )
+          expect(contract.listenerCount('Transfer')).toEqual(1)
+        })
       })
 
       it('listens an event with topics and invoke a callback', async () => {
         const initialData = 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
+        const contractInstance = new EventEmitterMock()
         const account = '0x001'
         const amount = 50
         const callback = jest.fn()
@@ -471,7 +479,7 @@ describe('useEthSWR', () => {
           account
         })
 
-        mockedContract.mockImplementation(() => new EventEmitterMock())
+        mockedContract.mockImplementation(() => contractInstance)
 
         function Container() {
           const { library, active } = useWeb3React()
@@ -530,16 +538,18 @@ describe('useEthSWR', () => {
           contract.emit('Transfer', null, account, amount, {})
         })
 
-        await waitFor(() =>
+        await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${initialData + amount + amount}`
           )
-        )
+          expect(contract.listenerCount('Transfer')).toEqual(1)
+        })
       })
 
       it('listens a list of events with topics and invoke all the callbacks', async () => {
         const initialData = 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
+        const contractInstance = new EventEmitterMock()
         const account = '0x001'
         const amount = 50
         const callback = jest.fn()
@@ -560,7 +570,7 @@ describe('useEthSWR', () => {
           account
         })
 
-        mockedContract.mockImplementation(() => new EventEmitterMock())
+        mockedContract.mockImplementation(() => contractInstance)
 
         function Container() {
           const { library, active } = useWeb3React()
@@ -622,11 +632,12 @@ describe('useEthSWR', () => {
           contract.emit('Transfer', null, account, amount, {})
         })
 
-        await waitFor(() =>
+        await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${initialData + amount + amount}`
           )
-        )
+          expect(contract.listenerCount('Transfer')).toEqual(1)
+        })
       })
     })
   })
