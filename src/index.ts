@@ -1,4 +1,5 @@
 export * from './eth-fetcher'
 export * from './types'
-import { default as ethFetcher } from './eth-fetcher'
-export default ethFetcher
+export * from './useEtherSWR'
+import { default as useEtherSWR } from './useEtherSWR'
+export default useEtherSWR

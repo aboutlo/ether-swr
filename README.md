@@ -4,6 +4,8 @@ An util to use SWR with Ethereum
 
 [![view on npm](https://img.shields.io/npm/v/ether-swr.svg)](https://www.npmjs.org/package/ether-swr)
 
+## Declarative fetch  
+
 ```typescript
 export const EthBalance = ({ symbol, address, decimals }) => {
   const { account, library } = useWeb3React<Web3Provider>()
@@ -84,9 +86,10 @@ A minimal example is available[here](./examples)
 ## Related projects
 
 - [SWR](https://swr.now.sh)
-- [Ether.js v5 (Beta)](https://github.com/ethers-io/ethers.js/tree/ethers-v5-beta)
+- [Ether.js)](https://github.com/ethers-io/ethers.js)
 - [web3-react](https://github.com/NoahZinsmeister/web3-react)
 - [Ethereum JSON-RPC Spec](https://github.com/ethereum/wiki/wiki/JSON-RPC)
+- [ethcall](https://github.com/Destiner/ethcall)
 
 ## Licence
 

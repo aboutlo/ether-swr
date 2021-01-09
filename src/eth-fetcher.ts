@@ -1,4 +1,4 @@
-import { Contract } from '@ethersproject/contracts'
+import { Contract } from 'ethers'
 import { Web3Provider } from '@ethersproject/providers'
 import { isAddress } from '@ethersproject/address'
 import { ABIError, ABINotFound } from './Errors'

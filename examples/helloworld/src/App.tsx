@@ -1,12 +1,11 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { Web3ReactProvider, useWeb3React } from '@web3-react/core'
 import { Web3Provider } from '@ethersproject/providers'
 import { InjectedConnector } from '@web3-react/injected-connector'
-import useSWR, { SWRConfig } from 'swr'
+import { BigNumber } from 'ethers'
 import { formatEther, formatUnits } from '@ethersproject/units'
-import { Contract } from '@ethersproject/contracts'
+import useEthSWR, { EthSWRConfig } from 'ether-swr'
 import ERC20ABI from './ERC20.abi.json'
-import ethFetcher from '../src'
 
 export const Networks = {
   MainNet: 1,
@@ -46,21 +45,27 @@ export const TOKENS_BY_NETWORK: {
       symbol: 'DAI',
       name: 'Dai',
       decimals: 18
-    },
-    {
+    }
+    /*{
       address: '0xF9bA5210F91D0474bd1e1DcDAeC4C58E359AaD85',
       symbol: 'MKR',
       name: 'Maker',
       decimals: 18
-    }
+    }*/
   ]
 }
 
-export const ABIs = (chainId): [string, any][] =>
-  TOKENS_BY_NETWORK[chainId].map(({ address }) => [address, ERC20ABI])
+export const ABIs = (chainId: number) => {
+  const matrix = TOKENS_BY_NETWORK[chainId]
+  return Object.entries(
+    matrix.reduce((memo, item) => {
+      return { ...memo, [item.address]: ERC20ABI }
+    }, {})
+  )
+}
 
-export const shorter = (str = '') =>
-  str.length > 8 ? str.slice(0, 6) + '...' + str.slice(-4) : str
+export const shorter = (str: string | null | undefined) =>
+  str && str.length > 8 ? str.slice(0, 6) + '...' + str.slice(-4) : str
 
 export const injectedConnector = new InjectedConnector({
   supportedChainIds: [
@@ -79,22 +84,23 @@ function getLibrary(provider: any): Web3Provider {
 }
 
 export const EthBalance = () => {
-  const { account, library } = useWeb3React<Web3Provider>()
-  const { data: balance, mutate } = useSWR(['getBalance', account, 'latest'])
-
-  useEffect(() => {
-    // listen for changes on an Ethereum address
-    console.log(`listening for blocks...`)
-    library.on('block', () => {
-      console.log('update balance...')
-      mutate(undefined, true)
-    })
-    // remove listener when the component is unmounted
-    return () => {
-      library.removeAllListeners('block')
+  const { account } = useWeb3React<Web3Provider>()
+  const { data: balance, mutate } = useEthSWR(
+    ['getBalance', account, 'latest'],
+    {
+      subscribe: [
+        {
+          // TODO LS we need to test it
+          name: 'block',
+          on: (event: any) => {
+            console.log('block', { event })
+            // on every block we check if Ether balance has changed by re-fetching
+            mutate(undefined, true)
+          }
+        }
+      ]
     }
-    // trigger the effect only on component mount
-  }, [])
+  )
 
   if (!balance) {
     return <div>...</div>
@@ -102,35 +108,60 @@ export const EthBalance = () => {
   return <div>{parseFloat(formatEther(balance)).toPrecision(4)} Ξ</div>
 }
 
-export const TokenBalance = ({ symbol, address, decimals }) => {
-  const { account, library } = useWeb3React<Web3Provider>()
-  const { data: balance, mutate } = useSWR([address, 'balanceOf', account])
+export const TokenBalance = ({
+  symbol,
+  address,
+  decimals
+}: {
+  symbol: string
+  address: string
+  decimals: number
+}) => {
+  const { account } = useWeb3React<Web3Provider>()
 
-  useEffect(() => {
-    // listen for changes on an Ethereum address
-    console.log(`listening for Transfer...`)
-    const contract = new Contract(address, ERC20ABI, library.getSigner())
-    const fromMe = contract.filters.Transfer(account, null)
-    library.on(fromMe, (from, to, amount, event) => {
-      console.log('Transfer|sent', { from, to, amount, event })
-      mutate(undefined, true)
-    })
-    const toMe = contract.filters.Transfer(null, account)
-    library.on(toMe, (from, to, amount, event) => {
-      console.log('Transfer|received', { from, to, amount, event })
-      mutate(undefined, true)
-    })
-    // remove listener when the component is unmounted
-    return () => {
-      library.removeAllListeners(toMe)
-      library.removeAllListeners(fromMe)
-    }
-    // trigger the effect only on component mount
-  }, [])
+  const { data: balance, mutate } = useEthSWR([address, 'balanceOf', account], {
+    subscribe: [
+      // A filter from anyone to me
+      {
+        name: 'Transfer',
+        topics: [null, account],
+        on: (
+          state: BigNumber,
+          fromAddress: string,
+          toAddress: string,
+          amount: BigNumber,
+          event: any
+        ) => {
+          console.log('receive', { event })
+          const update = state.add(amount)
+          mutate(update, false) // optimistic update skip re-fetch
+        }
+      },
+      // A filter from me to anyone
+      {
+        name: 'Transfer',
+        topics: [account, null],
+        on: (
+          state: BigNumber,
+          fromAddress: string,
+          toAddress: string,
+          amount: BigNumber,
+          event: any
+        ) => {
+          console.log('send', { event })
+          const update = state.sub(amount)
+          mutate(update, false) // optimistic update skip re-fetch
+        }
+      }
+    ]
+  })
+
+  console.log(`render: ${symbol}`)
 
   if (!balance) {
     return <div>...</div>
   }
+
   return (
     <div>
       {parseFloat(formatUnits(balance, decimals)).toPrecision(4)} {symbol}
@@ -138,7 +169,7 @@ export const TokenBalance = ({ symbol, address, decimals }) => {
   )
 }
 
-export const TokenList = ({ chainId }) => {
+export const TokenList = ({ chainId }: { chainId: number }) => {
   return (
     <>
       {TOKENS_BY_NETWORK[chainId].map(token => (
@@ -162,19 +193,21 @@ export const Wallet = () => {
       <div>ChainId: {chainId}</div>
       <div>Account: {shorter(account)}</div>
       {active ? (
-        <div>✅ </div>
+        <span role="img" aria-label="active">
+          ✅{' '}
+        </span>
       ) : (
         <button type="button" onClick={onClick}>
           Connect
         </button>
       )}
-      {active && (
-        <SWRConfig
-          value={{ fetcher: ethFetcher(library, new Map(ABIs(chainId))) }}
+      {active && chainId && (
+        <EthSWRConfig
+          value={{ web3Provider: library, ABIs: new Map(ABIs(chainId)) }}
         >
           <EthBalance />
-          <TokenList chainId={chainId} />
-        </SWRConfig>
+          {/*<TokenList chainId={chainId} />*/}
+        </EthSWRConfig>
       )}
     </div>
   )
@@ -187,3 +220,5 @@ export const App = () => {
     </Web3ReactProvider>
   )
 }
+
+export default App

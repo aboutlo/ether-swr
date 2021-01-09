@@ -15,7 +15,8 @@
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
     "prettier",
-    "prettier/@typescript-eslint"
+    "prettier/@typescript-eslint",
+    "plugin:react-hooks/recommended"
   ],
   "env": {
     "es6": true,
@@ -25,8 +26,6 @@
   },
   "rules": {
     "func-names": ["error", "as-needed"],
-    "no-shadow": "error",
-    "prefer-const": 0,
     "@typescript-eslint/explicit-function-return-type": 0,
     "@typescript-eslint/no-use-before-define": 0,
     "@typescript-eslint/camelcase": 0,
