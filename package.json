@@ -29,13 +29,13 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run types:check && lint-staged"
+      "pre-commit": "yarn types:check && yarn test && lint-staged"
     }
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "npm run lint:fix",
-      "npm run format",
+      "yarn run lint:fix",
+      "yarn run format",
       "git add"
     ]
   },
