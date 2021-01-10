@@ -68,7 +68,6 @@ describe('useEthSWR', () => {
       })
 
       it('resolves using the config', async () => {
-        // console.log('keys:', cache.keys())
         const mockData = 51
         const mockFetcher = jest.fn().mockReturnValue(mockData)
         mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
@@ -78,15 +77,12 @@ describe('useEthSWR', () => {
             fetcher: mockedEthFetcher(),
             dedupingInterval: 0
           })
-          // console.log('page', { data })
           return <div>Block Number, {data}</div>
         }
 
         const { container } = render(<Page />)
 
         await waitFor(() => {
-          // console.log('keys:', cache.keys())
-          // console.log('config:', container.firstChild.textContent)
           expect(container.firstChild.textContent).toEqual(
             `Block Number, ${mockData}`
           )
