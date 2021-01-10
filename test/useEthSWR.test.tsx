@@ -3,7 +3,6 @@ import useEthSWR, { EthSWRConfig, ethFetcher, cache } from '../src/'
 import ERC20ABI from './ERC20.abi.json'
 
 import * as React from 'react'
-import useSWR from 'swr'
 import { useWeb3React } from '@web3-react/core'
 import { Contract } from '@ethersproject/contracts'
 
@@ -19,13 +18,12 @@ const mockedContract = (Contract as unknown) as jest.Mock
 
 describe('useEthSWR', () => {
   describe('key', () => {
-    afterEach(() => {
-      cache.clear()
-      // new EventEmitterMock().removeAllListeners()
-      // mockedEthFetcher.mockReset()
-    })
-
     describe('base', () => {
+      beforeEach(() => {
+        cache.clear()
+        mockedEthFetcher.mockReset()
+      })
+      afterEach(cleanup)
       it('resolves using the fetcher passed', async () => {
         const mockData = 10
         const mockFetcher = jest.fn().mockReturnValue(mockData)
@@ -47,16 +45,13 @@ describe('useEthSWR', () => {
           expect(mockFetcher).toBeCalledWith('getBalance')
         })
       })
-
-      it('resolves using the config', async () => {
-        const mockData = 51
-        mockedEthFetcher.mockImplementation(
-          jest.fn(() => jest.fn().mockReturnValue(mockData))
-        )
+      it('resolves using an existing key', async () => {
+        const mockData = 10
+        const mockFetcher = jest.fn().mockReturnValue(mockData)
+        mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
 
         function Page() {
-          const { data } = useSWR(['getBalance'], {
-            fetcher: mockedEthFetcher(),
+          const { data } = useEthSWR(['getBalance'], mockedEthFetcher(), {
             dedupingInterval: 0
           })
           return <div>Balance, {data}</div>
@@ -64,11 +59,38 @@ describe('useEthSWR', () => {
 
         const { container } = render(<Page />)
 
-        await waitFor(() =>
+        await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${mockData}`
           )
-        )
+          // expect(mockFetcher).toBeCalledWith('getBalance')
+        })
+      })
+
+      it('resolves using the config', async () => {
+        // console.log('keys:', cache.keys())
+        const mockData = 51
+        const mockFetcher = jest.fn().mockReturnValue(mockData)
+        mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
+
+        function Page() {
+          const { data } = useEthSWR(['getBlockByNumber', 'latest'], {
+            fetcher: mockedEthFetcher(),
+            dedupingInterval: 0
+          })
+          // console.log('page', { data })
+          return <div>Block Number, {data}</div>
+        }
+
+        const { container } = render(<Page />)
+
+        await waitFor(() => {
+          // console.log('keys:', cache.keys())
+          // console.log('config:', container.firstChild.textContent)
+          expect(container.firstChild.textContent).toEqual(
+            `Block Number, ${mockData}`
+          )
+        })
       })
 
       it('resolves using the context', async () => {

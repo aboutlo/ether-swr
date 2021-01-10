@@ -4,6 +4,9 @@
   "description": "React Hooks library for Ethereum remote data fetching",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
+  "engines": {
+    "node": ">=10"
+  },
   "react-native": "./esm/index.js",
   "types": "./dist/index.d.ts",
   "files": [
@@ -13,8 +16,8 @@
   "repository": "aboutlo/ether-swr",
   "license": "MIT",
   "scripts": {
-    "build": "npm run build:esm && npm run build:cjs",
-    "prepare": "npm run build",
+    "build": "yarn run build:esm && yarn run build:cjs",
+    "prepublishOnly": "yarn run build",
     "build:cjs": "ncc build src/index.ts  -s -o dist -m -e react -e react-dom -e swr -e web3-react -e Web3Provider",
     "build:esm": "tsc --target ESNext --module ES6 --outDir esm",
     "release:major": "yarn standard-version major",
@@ -42,15 +45,14 @@
   },
   "devDependencies": {
     "@testing-library/jest-dom": "5.9.0",
-    "@testing-library/react": "10.2.1",
+    "@testing-library/react": "11.2.3",
     "@testing-library/react-hooks": "3.2.1",
     "@types/jest": "24.0.20",
     "@types/node": "11.12.0",
     "@types/react": "16.9.11",
     "@typescript-eslint/eslint-plugin": "2.34.0",
     "@typescript-eslint/parser": "2.34.0",
-    "@web3-react/core": "6.0.9",
-    "@web3-react/injected-connector": "6.0.7",
+    "@web3-react/core": "6.1.1",
     "@zeit/ncc": "0.20.5",
     "eslint": "6.6.0",
     "eslint-config-prettier": "6.5.0",
@@ -63,19 +65,17 @@
     "prettier": "1.18.2",
     "react": "^17.0.0",
     "react-dom": "^17.0.0",
-    "react-test-library": "0.0.1",
-    "react-test-renderer": "16.13.1",
+    "react-test-renderer": "^17.0.0",
     "serve": "11.3.1",
     "standard-version": "9.1.0",
-    "swr": "^0.3.2",
+    "swr": "^0.4.0",
     "ts-jest": "26.1.0",
     "typescript": "3.9.3"
   },
   "peerDependencies": {
-    "@web3-react/core": "6.0.9",
-    "@web3-react/injected-connector": "6.0.7",
-    "ethers": "^5.0.0",
-    "react": "^16.13.1",
-    "swr": "^0.3.2"
+    "ethers": "*",
+    "react": "*",
+    "react-dom": "*",
+    "swr": "*"
   }
 }
