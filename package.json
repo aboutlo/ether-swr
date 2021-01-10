@@ -14,6 +14,7 @@
   "license": "MIT",
   "scripts": {
     "build": "npm run build:esm && npm run build:cjs",
+    "prepare" : "npm run build",
     "build:cjs": "ncc build src/index.ts  -s -o dist -m -e react -e react-dom -e swr -e web3-react -e Web3Provider",
     "build:esm": "tsc --target ESNext --module ES6 --outDir esm",
     "release:major": "yarn standard-version major",
