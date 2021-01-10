@@ -53,7 +53,8 @@ function useEtherSWR<Data = any, Error = any>(
   const [target] = _key
   // we need to serialize the key as string otherwise
   // a new array is created everytime the component is rendered
-  const joinKey = _key.join('|')
+  // we follow SWR format
+  const joinKey = `arg@"${_key.join('"@"')}"`
 
   // base methods (e.g. getBalance, getBlockNumber, etc)
   // FIXME merge in only one useEffect
@@ -114,7 +115,7 @@ function useEtherSWR<Data = any, Error = any>(
         filter = contract.filters[subscribe]()
         contract.on(filter, value => {
           // auto refresh
-          mutate(joinKey, undefined, true)
+          mutate(_key, undefined, true)
         })
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
         const { name, topics, on } = subscribe
@@ -124,7 +125,7 @@ function useEtherSWR<Data = any, Error = any>(
             on(cache.get(joinKey), ...args)
           } else {
             // auto refresh
-            mutate(joinKey, undefined, true)
+            mutate(_key, undefined, true)
           }
         })
       }
@@ -138,7 +139,7 @@ function useEtherSWR<Data = any, Error = any>(
     }
     // FIXME revalidate if network change
   }, [joinKey, target, config.web3Provider, config.subscribe, config.ABIs])
-  return useSWR(joinKey, fn, config)
+  return useSWR(_key, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider
 export { EthSWRConfig }

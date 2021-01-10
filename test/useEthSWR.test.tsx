@@ -25,86 +25,122 @@ describe('useEthSWR', () => {
       // mockedEthFetcher.mockReset()
     })
 
-    it('resolves using the fetcher passed', async () => {
-      const mockData = 10
-      mockedEthFetcher.mockImplementation(
-        jest.fn(() => jest.fn().mockReturnValue(mockData))
-      )
+    describe('base', () => {
+      it('resolves using the fetcher passed', async () => {
+        const mockData = 10
+        const mockFetcher = jest.fn().mockReturnValue(mockData)
+        mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
 
-      function Page() {
-        const { data } = useEthSWR(['getBalance'], mockedEthFetcher(), {
-          dedupingInterval: 0
+        function Page() {
+          const { data } = useEthSWR(['getBalance'], mockedEthFetcher(), {
+            dedupingInterval: 0
+          })
+          return <div>Balance, {data}</div>
+        }
+
+        const { container } = render(<Page />)
+
+        await waitFor(() => {
+          expect(container.firstChild.textContent).toEqual(
+            `Balance, ${mockData}`
+          )
+          expect(mockFetcher).toBeCalledWith('getBalance')
         })
-        return <div>Balance, {data}</div>
-      }
-
-      const { container } = render(<Page />)
-
-      await waitFor(() =>
-        expect(container.firstChild.textContent).toEqual(`Balance, ${mockData}`)
-      )
-    })
-
-    it('resolves using the config', async () => {
-      const mockData = 51
-      mockedEthFetcher.mockImplementation(
-        jest.fn(() => jest.fn().mockReturnValue(mockData))
-      )
-
-      function Page() {
-        const { data } = useSWR(['getBalance'], {
-          fetcher: mockedEthFetcher(),
-          dedupingInterval: 0
-        })
-        return <div>Balance, {data}</div>
-      }
-
-      const { container } = render(<Page />)
-
-      await waitFor(() =>
-        expect(container.firstChild.textContent).toEqual(`Balance, ${mockData}`)
-      )
-    })
-
-    it('resolves using the context', async () => {
-      const mockData = 11111
-      // Look convolute bu keep in mind the fetcher is a curled function
-      mockedEthFetcher.mockImplementation(
-        jest.fn(() => jest.fn().mockReturnValue(mockData))
-      )
-      mockeduseWeb3React.mockReturnValue({
-        active: true,
-        library: new EventEmitterMock()
       })
 
-      function Container() {
-        const { library } = useWeb3React()
-        return (
-          <EthSWRConfig
-            value={{
-              dedupingInterval: 0,
-              // ABIs: new Map(),  // FIXME is it better?
-              web3Provider: library, // FIXME is it better?
-              fetcher: mockedEthFetcher(library, new Map())
-            }}
-          >
-            <Page />
-          </EthSWRConfig>
+      it('resolves using the config', async () => {
+        const mockData = 51
+        mockedEthFetcher.mockImplementation(
+          jest.fn(() => jest.fn().mockReturnValue(mockData))
         )
-      }
 
-      function Page() {
-        // FIXME if this key isn't unique some randome failure due to SWR
-        const { data } = useEthSWR(['getBalance', 'pending'])
-        return <div>Balance, {data}</div>
-      }
+        function Page() {
+          const { data } = useSWR(['getBalance'], {
+            fetcher: mockedEthFetcher(),
+            dedupingInterval: 0
+          })
+          return <div>Balance, {data}</div>
+        }
 
-      const { container } = render(<Container />)
-      expect(mockedEthFetcher).toHaveBeenCalled()
+        const { container } = render(<Page />)
 
-      await waitFor(() =>
-        expect(container.firstChild.textContent).toEqual(`Balance, ${mockData}`)
-      )
+        await waitFor(() =>
+          expect(container.firstChild.textContent).toEqual(
+            `Balance, ${mockData}`
+          )
+        )
+      })
+
+      it('resolves using the context', async () => {
+        const mockData = 11111
+        // Look convolute bu keep in mind the fetcher is a curled function
+        mockedEthFetcher.mockImplementation(
+          jest.fn(() => jest.fn().mockReturnValue(mockData))
+        )
+        mockeduseWeb3React.mockReturnValue({
+          active: true,
+          library: new EventEmitterMock()
+        })
+
+        function Container() {
+          const { library } = useWeb3React()
+          return (
+            <EthSWRConfig
+              value={{
+                dedupingInterval: 0,
+                // ABIs: new Map(),  // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
+                fetcher: mockedEthFetcher(library, new Map())
+              }}
+            >
+              <Page />
+            </EthSWRConfig>
+          )
+        }
+
+        function Page() {
+          // FIXME if this key isn't unique some randome failure due to SWR
+          const { data } = useEthSWR(['getBalance', 'pending'])
+          return <div>Balance, {data}</div>
+        }
+
+        const { container } = render(<Container />)
+        expect(mockedEthFetcher).toHaveBeenCalled()
+
+        await waitFor(() =>
+          expect(container.firstChild.textContent).toEqual(
+            `Balance, ${mockData}`
+          )
+        )
+      })
+    })
+
+    describe('contract', () => {
+      it('resolves using the fetcher passed', async () => {
+        const mockData = 10
+        const mockFetcher = jest.fn().mockReturnValue(mockData)
+        mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
+
+        function Page() {
+          const { data } = useEthSWR(
+            ['0x111', 'balanceOf', '0x01'],
+            mockedEthFetcher(),
+            {
+              dedupingInterval: 0
+            }
+          )
+          return <div>Balance, {data}</div>
+        }
+
+        const { container } = render(<Page />)
+
+        await waitFor(() => {
+          expect(container.firstChild.textContent).toEqual(
+            `Balance, ${mockData}`
+          )
+          expect(mockFetcher).toBeCalledWith('0x111', 'balanceOf', '0x01')
+        })
+      })
     })
   })
 
