@@ -204,7 +204,7 @@ export const Wallet = () => {
           value={{ web3Provider: library, ABIs: new Map(ABIs(chainId)) }}
         >
           <EthBalance />
-          {<TokenList chainId={chainId} />}
+          <TokenList chainId={chainId} />
         </EthSWRConfig>
       )}
     </div>
