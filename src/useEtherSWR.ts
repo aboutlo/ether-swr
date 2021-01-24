@@ -6,6 +6,7 @@ import { isAddress } from '@ethersproject/address'
 import { EthSWRConfigInterface } from './types'
 import EthSWRConfigContext from './eth-swr-config'
 import { ethFetcher } from './eth-fetcher'
+import { ABINotFound } from './Errors'
 
 export { cache } from 'swr'
 export type ethKeyInterface = [string, any?, any?, any?, any?]
@@ -34,6 +35,7 @@ function useEtherSWR<Data = any, Error = any>(
   }
   if (args.length > 2) {
     fn = args[1]
+    //FIXME we lost default value subscriber = []
     config = args[2]
   } else {
     if (typeof args[1] === 'function') {
@@ -59,8 +61,10 @@ function useEtherSWR<Data = any, Error = any>(
   // base methods (e.g. getBalance, getBlockNumber, etc)
   // FIXME merge in only one useEffect
   useEffect(() => {
-    if (!config.web3Provider || !config.subscribe || isAddress(target))
+    if (!config.web3Provider || !config.subscribe || isAddress(target)) {
       return () => ({})
+    }
+
     const subscribers = Array.isArray(config.subscribe)
       ? config.subscribe
       : [config.subscribe]
@@ -101,7 +105,7 @@ function useEtherSWR<Data = any, Error = any>(
     const abi = config.ABIs.get(target)
     // console.log('useEffect configure', _key)
     if (!abi) {
-      throw new Error(`Missing ABI for ${target}`)
+      throw new ABINotFound(`Missing ABI for ${target}`)
     }
     const contract = new Contract(target, abi, config.web3Provider.getSigner())
 
