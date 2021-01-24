@@ -90,7 +90,6 @@ export const EthBalance = () => {
     {
       subscribe: [
         {
-          // TODO LS we need to test it
           name: 'block',
           on: (event: any) => {
             console.log('block', { event })

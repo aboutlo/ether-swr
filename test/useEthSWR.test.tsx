@@ -7,6 +7,7 @@ import { useWeb3React } from '@web3-react/core'
 import { Contract } from '@ethersproject/contracts'
 
 import EventEmitterMock from './utils'
+import { ABINotFound } from '../src/Errors'
 
 jest.mock('../src/eth-fetcher')
 jest.mock('@web3-react/core')
@@ -134,6 +135,45 @@ describe('useEthSWR', () => {
     })
 
     describe('contract', () => {
+      beforeEach(() => {
+        cache.clear()
+        mockedEthFetcher.mockReset()
+      })
+      afterEach(cleanup)
+      it('throws ABI Missing', async () => {
+        const mockData = 10
+        const mockFetcher = jest.fn().mockReturnValue(mockData)
+        mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
+
+        const mockedLibrary = new EventEmitterMock()
+
+        mockeduseWeb3React.mockReturnValue({
+          active: true,
+          library: mockedLibrary
+        })
+
+        function Page() {
+          const { library } = useWeb3React()
+          const { data } = useEthSWR(
+            ['0x6b175474e89094c44da98b954eedeac495271d0f', 'balanceOf', '0x01'],
+            mockedEthFetcher(),
+            {
+              ABIs: new Map(),
+              web3Provider: library,
+              subscribe: []
+            }
+          )
+          return <div>Balance, {data}</div>
+        }
+
+        expect(() => {
+          render(<Page />)
+        }).toThrowError(
+          new ABINotFound(
+            'Missing ABI for 0x6b175474e89094c44da98b954eedeac495271d0f'
+          )
+        )
+      })
       it('resolves using the fetcher passed', async () => {
         const mockData = 10
         const mockFetcher = jest.fn().mockReturnValue(mockData)
