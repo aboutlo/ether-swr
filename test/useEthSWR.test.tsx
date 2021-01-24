@@ -162,24 +162,23 @@ describe('useEthSWR', () => {
     })
   })
 
-  describe('listening', () => {
+  describe('subscribe', () => {
     describe('base', () => {
       afterEach(() => {
         cache.clear()
         // new EventEmitterMock().removeAllListeners()
       })
-      it('listens an event', async () => {
+      it('listens an event and update data', async () => {
         const initialData = 10
+        const finalData = initialData + 10
+        const method = 'getBalance'
+        const keyResolver = jest
+          .fn()
+          .mockReturnValueOnce(initialData)
+          .mockReturnValue(finalData)
 
-        // Look convolute bu keep in mind the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(
-          jest.fn(() =>
-            jest
-              .fn()
-              .mockReturnValueOnce(initialData)
-              .mockReturnValue(initialData + 10)
-          )
-        )
+        // Looks convoluted but the fetcher is a curled function
+        mockedEthFetcher.mockImplementation(jest.fn(() => keyResolver))
 
         const mockedLibrary = new EventEmitterMock()
 
@@ -205,7 +204,7 @@ describe('useEthSWR', () => {
         }
 
         function Page() {
-          const { data } = useEthSWR(['getBalance'], {
+          const { data } = useEthSWR([method], {
             subscribe: 'block'
           })
           return <div>Balance, {data}</div>
@@ -223,23 +222,25 @@ describe('useEthSWR', () => {
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
-            `Balance, ${initialData + 10}`
+            `Balance, ${finalData}`
           )
+          expect(keyResolver).toHaveBeenNthCalledWith(1, method)
+          expect(keyResolver).toHaveBeenNthCalledWith(2, method)
           expect(mockedLibrary.listenerCount('block')).toEqual(1)
         })
       })
-      it('listens a list of events', async () => {
+      it('listens a list of events an update data', async () => {
         const initialData = 10
+        const finalData = initialData + 10
+        const method = 'getBalance'
 
-        // Look convolute bu keep in mind the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(
-          jest.fn(() =>
-            jest
-              .fn()
-              .mockReturnValueOnce(initialData)
-              .mockReturnValue(initialData + 10)
-          )
-        )
+        const keyResolver = jest
+          .fn()
+          .mockReturnValueOnce(initialData)
+          .mockReturnValue(finalData)
+
+        // Looks convoluted but the fetcher is a curled function
+        mockedEthFetcher.mockImplementation(jest.fn(() => keyResolver))
 
         const mockedLibrary = new EventEmitterMock()
 
@@ -283,6 +284,8 @@ describe('useEthSWR', () => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${initialData + 10}`
           )
+          expect(keyResolver).toHaveBeenNthCalledWith(1, method)
+          expect(keyResolver).toHaveBeenNthCalledWith(2, method)
           expect(mockedLibrary.listenerCount('block')).toEqual(1)
         })
       })

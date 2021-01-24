@@ -7,7 +7,7 @@ A wrapper to use [SWR](https://swr.vercel.app/) with Ethereum
 
 ## Declarative fetch
 
-### Interact with basic method
+### Interact with Ethereum methods (e.g. getBalance, blockNumber)
 
 ```typescript
 const { data: balance } = useEthSWR(['getBalance', 'latest'])
@@ -15,22 +15,96 @@ const { data: balance } = useEthSWR(['getBalance', 'latest'])
 
 You can use all the methods provided by a Web3Provider from [Ether.js]()
 
-### Interact with a smart contract
+### Interact with a smart contract (e.g ERC20 )
 
 ```typescript
 const { data: balance } = useEthSWR([
   '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI contract
-  'balanceOf',                                  // Method  
+  'balanceOf',                                  // Method
   '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643'  // holder
 ])
 ```
 
 You can use all the methods provided by a contract as long as you have provided the ABI associated to the smart contract
 
+### Subscribe to a topic
+
+Subscribe to a topic refresh automatically the underline data once it's dispatched
+
+```typescript
+const { data: balance, mutate } = useEthSWR([address, 'balanceOf', account], {
+  subscribe: [
+    // A filter from anyone to me
+    {
+      name: 'Transfer',
+      topics: [null, account]
+    },
+    // A filter from me to anyone
+    {
+      name: 'Transfer',
+      topics: [account, null]
+    }
+  ]
+})
+
+return (
+  <div>
+    {parseFloat(formatUnits(balance, decimals)).toPrecision(4)} {symbol}
+  </div>
+)
+```
+
+Subscribe to a topic providing a callback allows to use an optimistic update
+
+```typescript
+const { data: balance, mutate } = useEthSWR([address, 'balanceOf', account], {
+  subscribe: [
+    // A filter from anyone to me
+    {
+      name: 'Transfer',
+      topics: [null, account],
+      on: (
+        data: BigNumber,
+        fromAddress: string,
+        toAddress: string,
+        amount: BigNumber,
+        event: any
+      ) => {
+        console.log('receive', { event })
+        const update = data.add(amount)
+        mutate(update, false) // optimistic update skip re-fetch
+      }
+    },
+    // A filter from me to anyone
+    {
+      name: 'Transfer',
+      topics: [account, null],
+      on: (
+        data: BigNumber,
+        fromAddress: string,
+        toAddress: string,
+        amount: BigNumber,
+        event: any
+      ) => {
+        console.log('send', { event })
+        const update = data.sub(amount)
+        mutate(update, false) // optimistic update skip re-fetch
+      }
+    }
+  ]
+})
+
+return (
+  <div>
+    {parseFloat(formatUnits(balance, decimals)).toPrecision(4)} {symbol}
+  </div>
+)
+```
+
 ## Getting Started
 
 You can use `EthSWRConfig` to have a global fetcher capable of retrieving basic Ethereum information (e.g. block, getBalance)
-or directly interact with a smart contract
+or directly interact with a smart contract mapped to its ABI.
 
 ```js
 import React from 'react'
@@ -121,14 +195,14 @@ export const Wallet = () => {
 
 ## Example
 
-A minimal example is available[here](./examples)
+A minimal example with an event is available [here](./examples)
 
 ## Related projects
 
 - [SWR](https://swr.now.sh)
-- [Ether.js)](https://github.com/ethers-io/ethers.js)
+- [Ether.js](https://github.com/ethers-io/ethers.js)
 - [web3-react](https://github.com/NoahZinsmeister/web3-react)
-- [Ethereum JSON-RPC Spec](https://github.com/ethereum/wiki/wiki/JSON-RPC)
+- [Ethereum JSON-RPC Spec](https://eth.wiki/json-rpc/API)
 
 ## Licence
 
