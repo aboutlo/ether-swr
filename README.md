@@ -19,9 +19,9 @@ You can use all the methods provided by a Web3Provider from [Ether.js]()
 
 ```typescript
 const { data: balance } = useEthSWR([
-  '0x6b175474e89094c44da98b954eedeac495271d0f',
-  'balanceOf',
-  'latest'
+  '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI contract
+  'balanceOf',                                  // Method  
+  '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643'  // holder
 ])
 ```
 
