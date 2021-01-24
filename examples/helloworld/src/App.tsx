@@ -85,7 +85,22 @@ function getLibrary(provider: any): Web3Provider {
 
 export const EthBalance = () => {
   const { account } = useWeb3React<Web3Provider>()
-  const { data: balance } = useEthSWR(['getBalance', account, 'latest'])
+  const { data: balance, mutate } = useEthSWR(
+    ['getBalance', account, 'latest'],
+    {
+      subscribe: [
+        {
+          // TODO LS we need to test it
+          name: 'block',
+          on: (event: any) => {
+            console.log('block', { event })
+            // on every block we check if Ether balance has changed by re-fetching
+            mutate(undefined, true)
+          }
+        }
+      ]
+    }
+  )
 
   if (!balance) {
     return <div>...</div>
@@ -104,9 +119,42 @@ export const TokenBalance = ({
 }) => {
   const { account } = useWeb3React<Web3Provider>()
 
-  const { data: balance } = useEthSWR([address, 'balanceOf', account])
-
-  console.log(`render: ${symbol}`)
+  const { data: balance, mutate } = useEthSWR([address, 'balanceOf', account], {
+    subscribe: [
+      // A filter from anyone to me
+      {
+        name: 'Transfer',
+        topics: [null, account],
+        on: (
+          state: BigNumber,
+          fromAddress: string,
+          toAddress: string,
+          amount: BigNumber,
+          event: any
+        ) => {
+          console.log('receive', { event })
+          const update = state.add(amount)
+          mutate(update, false) // optimistic update skip re-fetch
+        }
+      },
+      // A filter from me to anyone
+      {
+        name: 'Transfer',
+        topics: [account, null],
+        on: (
+          state: BigNumber,
+          fromAddress: string,
+          toAddress: string,
+          amount: BigNumber,
+          event: any
+        ) => {
+          console.log('send', { event })
+          const update = state.sub(amount)
+          mutate(update, false) // optimistic update skip re-fetch
+        }
+      }
+    ]
+  })
 
   if (!balance) {
     return <div>...</div>
@@ -156,7 +204,7 @@ export const Wallet = () => {
           value={{ web3Provider: library, ABIs: new Map(ABIs(chainId)) }}
         >
           <EthBalance />
-          <TokenList chainId={chainId} />
+          {<TokenList chainId={chainId} />}
         </EthSWRConfig>
       )}
     </div>
