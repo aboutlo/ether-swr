@@ -182,7 +182,7 @@ export const Wallet = () => {
       )}
       {active && chainId && (
         <EthSWRConfig
-          value={{ web3Provider: library, ABIs: new Map(ABIs) }}
+          value={{ provider: library, ABIs: new Map(ABIs) }}
         >
           <EthBalance />
           <TokenList chainId={chainId} />

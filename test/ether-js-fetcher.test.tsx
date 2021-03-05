@@ -1,4 +1,4 @@
-import { ethFetcher } from '../src'
+import { etherJsFetcher } from '../src'
 import { Web3Provider } from '@ethersproject/providers'
 import { Contract } from '@ethersproject/contracts'
 import TestABI from './test.abi.json'
@@ -11,13 +11,13 @@ const ContractMock = Contract as jest.Mocked<any>
 
 describe('ethFetcher', () => {
   it('is defined', () => {
-    expect(ethFetcher).toBeDefined()
+    expect(etherJsFetcher).toBeDefined()
   })
 
   it('return a fetcher', () => {
     const jsonRpcFetchFunc = jest.fn()
     const library = new Web3ProviderMock(jsonRpcFetchFunc)
-    expect(ethFetcher(library)).toBeDefined()
+    expect(etherJsFetcher(library)).toBeDefined()
   })
 
   describe('eth', () => {
@@ -28,7 +28,7 @@ describe('ethFetcher', () => {
       library.getBalance = jest
         .fn()
         .mockImplementation(() => Promise.resolve(balance))
-      const fetcher = ethFetcher(library)
+      const fetcher = etherJsFetcher(library)
       // SWR spread the array when it invoke the fetcher
       await expect(fetcher(...['getBalance'])).resolves.toEqual(balance)
     })
@@ -49,7 +49,7 @@ describe('ethFetcher', () => {
       const contract = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
       const account = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
       const ABIs = new Map([[contract, TestABI]])
-      const fetcher = ethFetcher(library, ABIs)
+      const fetcher = etherJsFetcher(library, ABIs)
       // SWR spread the array when it invoke the fetcher
       await expect(
         fetcher(...[contract, 'balanceOf', account])

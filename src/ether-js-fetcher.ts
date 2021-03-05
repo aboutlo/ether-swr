@@ -1,9 +1,10 @@
 import { Contract } from 'ethers'
-import { Web3Provider } from '@ethersproject/providers'
 import { isAddress } from '@ethersproject/address'
 import { ABIError, ABINotFound } from './Errors'
+// import { Web3Provider } from '@ethersproject/providers'
+import { Provider } from './types'
 
-export const ethFetcher = (library: Web3Provider, ABIs?: Map<string, any>) => (
+export const etherJsFetcher = (provider: Provider, ABIs?: Map<string, any>) => (
   ...args
 ) => {
   const [arg1, arg2, ...params] = args
@@ -15,12 +16,12 @@ export const ethFetcher = (library: Web3Provider, ABIs?: Map<string, any>) => (
     const method = arg2
     const abi = ABIs.get(address)
     if (!abi) throw new ABINotFound(`ABI not found for ${address}`)
-    const contract = new Contract(address, abi, library.getSigner())
+    const contract = new Contract(address, abi, provider.getSigner())
     return contract[method](...params)
   }
   // it's a eth call
   const method = arg1
-  return library[method](arg2, ...params)
+  return provider[method](arg2, ...params)
 }
 
-export default ethFetcher
+export default etherJsFetcher

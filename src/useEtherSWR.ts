@@ -5,7 +5,7 @@ import { Contract } from 'ethers'
 import { isAddress } from '@ethersproject/address'
 import { EthSWRConfigInterface } from './types'
 import EthSWRConfigContext from './eth-swr-config'
-import { ethFetcher } from './eth-fetcher'
+import { etherJsFetcher } from './ether-js-fetcher'
 import { ABINotFound } from './Errors'
 
 export { cache } from 'swr'
@@ -49,7 +49,7 @@ function useEtherSWR<Data = any, Error = any>(
 
   if (fn === undefined) {
     // fn = config.fetcher(library, config.ABIs) as any
-    fn = config.fetcher || ethFetcher(config.web3Provider, config.ABIs)
+    fn = config.fetcher || etherJsFetcher(config.provider, config.ABIs)
   }
 
   const [target] = _key
@@ -61,7 +61,7 @@ function useEtherSWR<Data = any, Error = any>(
   // base methods (e.g. getBalance, getBlockNumber, etc)
   // FIXME merge in only one useEffect
   useEffect(() => {
-    if (!config.web3Provider || !config.subscribe || isAddress(target)) {
+    if (!config.provider || !config.subscribe || isAddress(target)) {
       return () => ({})
     }
 
@@ -73,11 +73,12 @@ function useEtherSWR<Data = any, Error = any>(
       let filter
       if (typeof subscribe === 'string') {
         filter = subscribe
-        config.web3Provider.on(filter, () => mutate(joinKey, undefined, true))
+        // TODO LS this depends on etherjs
+        config.provider.on(filter, () => mutate(joinKey, undefined, true))
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
         const { name, on } = subscribe
         filter = name
-        config.web3Provider.on(filter, (...args) => {
+        config.provider.on(filter, (...args) => {
           if (on) {
             on(cache.get(joinKey), ...args)
           } else {
@@ -90,15 +91,15 @@ function useEtherSWR<Data = any, Error = any>(
 
     return () => {
       subscribers.forEach(filter => {
-        config.web3Provider.removeAllListeners(filter)
+        config.provider.removeAllListeners(filter)
       })
     }
-  }, [joinKey, target, config.web3Provider, config.subscribe, config.ABIs])
+  }, [joinKey, target, config.provider, config.subscribe, config.ABIs])
 
   // contract filter (e.g. balanceOf, approve, etc)
   // FIXME merge in only one useEffect
   useEffect(() => {
-    if (!config.web3Provider || !config.subscribe || !isAddress(target)) {
+    if (!config.provider || !config.subscribe || !isAddress(target)) {
       return () => ({})
     }
 
@@ -107,7 +108,7 @@ function useEtherSWR<Data = any, Error = any>(
     if (!abi) {
       throw new ABINotFound(`Missing ABI for ${target}`)
     }
-    const contract = new Contract(target, abi, config.web3Provider.getSigner())
+    const contract = new Contract(target, abi, config.provider.getSigner())
 
     const subscribers = Array.isArray(config.subscribe)
       ? config.subscribe
@@ -142,7 +143,7 @@ function useEtherSWR<Data = any, Error = any>(
       })
     }
     // FIXME revalidate if network change
-  }, [joinKey, target, config.web3Provider, config.subscribe, config.ABIs])
+  }, [joinKey, target, config.provider, config.subscribe, config.ABIs])
   return useSWR(_key, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider

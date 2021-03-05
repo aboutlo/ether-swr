@@ -1,5 +1,5 @@
 import { cleanup, render, waitFor, act } from '@testing-library/react'
-import useEthSWR, { EthSWRConfig, ethFetcher, cache } from '../src/'
+import useEthSWR, { EthSWRConfig, etherJsFetcher, cache } from '../src/'
 import ERC20ABI from './ERC20.abi.json'
 
 import * as React from 'react'
@@ -9,11 +9,11 @@ import { Contract } from '@ethersproject/contracts'
 import EventEmitterMock from './utils'
 import { ABINotFound } from '../src/Errors'
 
-jest.mock('../src/eth-fetcher')
+jest.mock('../src/ether-js-fetcher')
 jest.mock('@web3-react/core')
 jest.mock('@ethersproject/contracts')
 
-const mockedEthFetcher = ethFetcher as jest.Mock
+const mockedEthFetcher = etherJsFetcher as jest.Mock
 const mockeduseWeb3React = useWeb3React as jest.Mock
 const mockedContract = (Contract as unknown) as jest.Mock
 
@@ -108,7 +108,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 // ABIs: new Map(),  // FIXME is it better?
-                web3Provider: library, // FIXME is it better?
+                provider: library, // FIXME is it better?
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -159,7 +159,7 @@ describe('useEthSWR', () => {
             mockedEthFetcher(),
             {
               ABIs: new Map(),
-              web3Provider: library,
+              provider: library,
               subscribe: []
             }
           )
@@ -234,7 +234,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(),
-                web3Provider: library, // FIXME is it better?
+                provider: library, // FIXME is it better?
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -296,7 +296,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(),
-                web3Provider: library, // FIXME is it better?
+                provider: library, // FIXME is it better?
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -357,7 +357,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(),
-                web3Provider: library, // FIXME is it better?
+                provider: library, // FIXME is it better?
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -437,7 +437,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library, // FIXME is it better?
+                provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
@@ -506,7 +506,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library, // FIXME is it better?
+                provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
@@ -585,7 +585,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library, // FIXME is it better?
+                provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
@@ -676,7 +676,7 @@ describe('useEthSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library, // FIXME is it better?
+                provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())

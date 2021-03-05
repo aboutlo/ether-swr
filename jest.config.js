@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testRegex: '/test/.*\\.test\\.*',
-  "collectCoverage": true,
+  "collectCoverage": false,
   "collectCoverageFrom": [
     "src/**/*.ts"
   ],
