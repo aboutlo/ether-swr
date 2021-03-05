@@ -104,7 +104,7 @@ function useEtherSWR<Data = any, Error = any>(
         config.provider.removeAllListeners(filter)
       })
     }
-  }, [joinKey, target, config.provider, config.subscribe, config.ABIs])
+  }, [joinKey, target])
 
   // contract filter (e.g. balanceOf, approve, etc)
   // FIXME merge in only one useEffect
@@ -163,7 +163,7 @@ function useEtherSWR<Data = any, Error = any>(
       console.log('size', contracts.size)
     }
     // FIXME revalidate if network change
-  }, [joinKey, target, config.provider, config.subscribe, config.ABIs])
+  }, [joinKey, target])
   return useSWR(_key, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider
