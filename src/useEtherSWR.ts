@@ -124,8 +124,11 @@ function useEtherSWR<Data = any, Error = any>(
         })
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
         const { name, topics, on } = subscribe
-        filter = contract.filters[name](...topics)
+        const args = topics || []
+        filter = contract.filters[name](...args)
+        // console.log('subscribe:', filter)
         contract.on(filter, (...args) => {
+          // console.log(`on_${name}:`, args)
           if (on) {
             on(cache.get(joinKey), ...args)
           } else {
