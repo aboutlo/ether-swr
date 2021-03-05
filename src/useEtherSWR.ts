@@ -9,6 +9,16 @@ import { etherJsFetcher } from './ether-js-fetcher'
 import { ABINotFound } from './Errors'
 
 export { cache } from 'swr'
+const contracts = new Map<string, Contract>()
+function getContract(address, abi, signer) {
+  let contract = contracts.get(address)
+  if (contract) {
+    return contract
+  }
+  contract = new Contract(address, abi, signer)
+  contracts.set(address, contract)
+  return contract
+}
 export type ethKeyInterface = [string, any?, any?, any?, any?]
 
 function useEtherSWR<Data = any, Error = any>(
@@ -108,7 +118,8 @@ function useEtherSWR<Data = any, Error = any>(
     if (!abi) {
       throw new ABINotFound(`Missing ABI for ${target}`)
     }
-    const contract = new Contract(target, abi, config.provider.getSigner())
+    // const contract = new Contract(target, abi, config.provider.getSigner())
+    const contract = getContract(target, abi, config.provider.getSigner())
 
     const subscribers = Array.isArray(config.subscribe)
       ? config.subscribe
@@ -140,10 +151,16 @@ function useEtherSWR<Data = any, Error = any>(
     })
 
     return () => {
+      console.log('== unmount  ==', target)
+      console.log('size', contracts.size)
       subscribers.forEach(filter => {
         // FIXME the filter need to be unwrap to find the listener as for above
         contract.removeAllListeners(filter)
       })
+      const done = contracts.delete(target)
+
+      console.log({ done })
+      console.log('size', contracts.size)
     }
     // FIXME revalidate if network change
   }, [joinKey, target, config.provider, config.subscribe, config.ABIs])
