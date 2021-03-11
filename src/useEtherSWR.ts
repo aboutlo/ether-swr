@@ -32,9 +32,10 @@ function useEtherSWR<Data = any, Error = any>(
   let _keys: ethKeysInterface
   let fn: any //fetcherFn<Data> | undefined
   let config: EthSWRConfigInterface<Data, Error> = { subscribe: [] }
-
+  let isMulticall = false
   if (args.length >= 1) {
     _key = args[0]
+    isMulticall = Array.isArray(_key[0])
   }
   if (args.length > 2) {
     fn = args[1]
@@ -55,17 +56,29 @@ function useEtherSWR<Data = any, Error = any>(
     fn = config.fetcher || etherJsFetcher(config.provider, config.ABIs)
   }
 
-  const [target] = _key
+  // TODO LS implement a getTarget and change subscribe interface {subscribe: {name: "Transfer", target: 0x01}}
+  const [target] = isMulticall
+    ? [_key[0][0]] // pick the first element of the list.
+    : _key
   // we need to serialize the key as string otherwise
   // a new array is created everytime the component is rendered
   // we follow SWR format
-  const joinKey = `arg@"${_key.join('"@"')}"`
+
+  const serializedKey = isMulticall
+    ? JSON.stringify(_key)
+    : cache.serializeKey(_key)[0]
+  // const joinKey = `arg@"${_key.join('"@"')}"`
   // const joinKey = `arg@"${JSON.stringify(_key)}"`
 
   // base methods (e.g. getBalance, getBlockNumber, etc)
   // FIXME merge in only one useEffect
   useEffect(() => {
-    if (!config.provider || !config.subscribe || isAddress(target)) {
+    if (
+      !config.provider ||
+      !config.subscribe ||
+      isAddress(target) ||
+      Array.isArray(target)
+    ) {
       return () => ({})
     }
 
@@ -75,12 +88,13 @@ function useEtherSWR<Data = any, Error = any>(
 
     subscribers.forEach(subscribe => {
       let filter
+      // const joinKey = isMulticall ? serializedKey : cache.serializeKey(_key)[0]
+      const joinKey = serializedKey
       if (typeof subscribe === 'string') {
         filter = subscribe
         // TODO LS this depends on etherjs
-        // FIXME joinKey has to match the one we send to SWR
         config.provider.on(filter, () => {
-          console.log('on:', { filter })
+          console.log('on:', { filter }, cache.keys())
           mutate(joinKey, undefined, true)
         })
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
@@ -102,7 +116,7 @@ function useEtherSWR<Data = any, Error = any>(
         config.provider.removeAllListeners(filter)
       })
     }
-  }, [joinKey, target])
+  }, [serializedKey, target])
 
   // contract filter (e.g. balanceOf, approve, etc)
   // FIXME merge in only one useEffect
@@ -125,11 +139,15 @@ function useEtherSWR<Data = any, Error = any>(
 
     subscribers.forEach(subscribe => {
       let filter
+      // const joinKey = isMulticall ? cache.serializeKey(serializedKey)[0] : _key
       if (typeof subscribe === 'string') {
         filter = contract.filters[subscribe]()
+        //FIXME _key has to be equals to the serialization key we sent to SWR
+        console.log('set:', { filter }, cache.keys())
         contract.on(filter, value => {
           // auto refresh
-          mutate(_key, undefined, true)
+          console.log('on:', { filter }, cache.keys())
+          mutate(serializedKey, undefined, true)
         })
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
         const { name, topics, on } = subscribe
@@ -139,7 +157,7 @@ function useEtherSWR<Data = any, Error = any>(
         contract.on(filter, (...args) => {
           // console.log(`on_${name}:`, args)
           if (on) {
-            on(cache.get(joinKey), ...args)
+            on(cache.get(serializedKey), ...args)
           } else {
             // auto refresh
             mutate(_key, undefined, true)
@@ -158,10 +176,10 @@ function useEtherSWR<Data = any, Error = any>(
       contracts.delete(target)
     }
     // FIXME revalidate if network change
-  }, [joinKey, target])
+  }, [serializedKey, target])
   // FIXME serialize as string if the key is an array aka multicall
-  const serializedKey = Array.isArray(_key[0]) ? JSON.stringify(_key) : _key
-  return useSWR(serializedKey, fn, config)
+
+  return useSWR(isMulticall ? serializedKey : _key, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider
 export { EthSWRConfig }

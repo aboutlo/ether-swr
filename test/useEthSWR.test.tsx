@@ -339,7 +339,6 @@ describe('useEthSWR', () => {
           if (isValidating) {
             return <div>Loading</div>
           }
-          console.log({ data, isValidating })
           return <div>Balance, {data}</div>
         }
 
@@ -561,6 +560,72 @@ describe('useEthSWR', () => {
             `Balance, ${initialData + 10}`
           )
           expect(contract.listenerCount('Transfer')).toEqual(1)
+        })
+      })
+      it('listens an event and refresh multiple data', async () => {
+        const initialData = 10
+        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
+        const contractInstance = new EventEmitterMock()
+
+        // Look convolute bu keep in mind the fetcher is a curled function
+        mockedEthFetcher.mockImplementation(
+          jest.fn(() =>
+            jest
+              .fn()
+              .mockReturnValueOnce(initialData)
+              .mockReturnValue(initialData + 10)
+          )
+        )
+
+        mockeduseWeb3React.mockReturnValue({
+          active: true,
+          library: new EventEmitterMock()
+        })
+
+        mockedContract.mockImplementation(() => contractInstance)
+
+        function Container() {
+          const { library } = useWeb3React()
+          return (
+            <EthSWRConfig
+              value={{
+                dedupingInterval: 0,
+                ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
+                provider: library, // FIXME is it better?
+                // it could be because the fetcher can receive all the params at once
+                //
+                fetcher: mockedEthFetcher(library, new Map())
+              }}
+            >
+              <Page />
+            </EthSWRConfig>
+          )
+        }
+
+        function Page() {
+          const { account } = useWeb3React()
+          const { data } = useEthSWR([[contractAddr, 'balanceOf', account]], {
+            subscribe: 'Transfer'
+          })
+          return <div>Balance, {data}</div>
+        }
+
+        const { container } = render(<Container />)
+
+        await waitFor(() =>
+          expect(container.firstChild.textContent).toEqual(
+            `Balance, ${initialData}`
+          )
+        )
+
+        const contract = mockedContract()
+        contract.emit('Transfer')
+
+        await waitFor(() => {
+          expect(contract.listenerCount('Transfer')).toEqual(1)
+          expect(container.firstChild.textContent).toEqual(
+            `Balance, ${initialData + 10}`
+          )
         })
       })
       it('listens an event with empty topics and refresh data', async () => {
