@@ -59,8 +59,8 @@ function useEtherSWR<Data = any, Error = any>(
   // we need to serialize the key as string otherwise
   // a new array is created everytime the component is rendered
   // we follow SWR format
-  // const joinKey = `arg@"${_key.join('"@"')}"`
-  const joinKey = `arg@"${JSON.stringify(_key)}"`
+  const joinKey = `arg@"${_key.join('"@"')}"`
+  // const joinKey = `arg@"${JSON.stringify(_key)}"`
 
   // base methods (e.g. getBalance, getBlockNumber, etc)
   // FIXME merge in only one useEffect
@@ -78,7 +78,11 @@ function useEtherSWR<Data = any, Error = any>(
       if (typeof subscribe === 'string') {
         filter = subscribe
         // TODO LS this depends on etherjs
-        config.provider.on(filter, () => mutate(joinKey, undefined, true))
+        // FIXME joinKey has to match the one we send to SWR
+        config.provider.on(filter, () => {
+          console.log('on:', { filter })
+          mutate(joinKey, undefined, true)
+        })
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
         const { name, on } = subscribe
         filter = name
@@ -152,9 +156,6 @@ function useEtherSWR<Data = any, Error = any>(
         contract.removeAllListeners(filter)
       })
       contracts.delete(target)
-
-      // console.log({ done })
-      // console.log('size', contracts.size)
     }
     // FIXME revalidate if network change
   }, [joinKey, target])

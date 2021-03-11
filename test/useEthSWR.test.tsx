@@ -1,9 +1,5 @@
 import { cleanup, render, waitFor, act } from '@testing-library/react'
-import useEthSWR, {
-  EthSWRConfig,
-  etherJsFetcher,
-  cache,
-} from '../src/'
+import useEthSWR, { EthSWRConfig, etherJsFetcher, cache } from '../src/'
 import ERC20ABI from './ERC20.abi.json'
 import { sleep } from './utils'
 
@@ -223,7 +219,7 @@ describe('useEthSWR', () => {
               dedupingInterval: 0
             }
           )
-          if(isValidating) return <div>Loading</div>
+          if (isValidating) return <div>Loading</div>
           return <div>Balance, {data}</div>
         }
 
@@ -232,7 +228,9 @@ describe('useEthSWR', () => {
 
         await act(() => sleep(110))
 
-        expect(container.textContent).toMatchInlineSnapshot(`"Balance, ${mockData}"`)
+        expect(container.textContent).toMatchInlineSnapshot(
+          `"Balance, ${mockData}"`
+        )
 
         // await waitFor(() => {
         //   expect(container.firstChild.textContent).toEqual(
@@ -283,13 +281,6 @@ describe('useEthSWR', () => {
         await act(() => sleep(110))
 
         expect(container.textContent).toMatchInlineSnapshot(`"Balance, data"`)
-
-        // await waitFor(() => {
-        //   expect(container.firstChild.textContent).toEqual(
-        //     `Balance, ${mockData}`
-        //   )
-        //   // expect(mockFetcher).toBeCalledWith(...keys)
-        // })
       })
     })
   })
@@ -310,7 +301,12 @@ describe('useEthSWR', () => {
           .mockReturnValue(finalData)
 
         // Looks convoluted but the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(jest.fn(() => keyResolver))
+        mockedEthFetcher.mockImplementation(
+          jest.fn(args => {
+            // console.log('fetcher', {args})
+            return keyResolver
+          })
+        )
 
         const mockedLibrary = new EventEmitterMock()
 
@@ -324,6 +320,7 @@ describe('useEthSWR', () => {
           return (
             <EthSWRConfig
               value={{
+                refreshInterval: 0,
                 dedupingInterval: 0,
                 ABIs: new Map(),
                 provider: library, // FIXME is it better?
@@ -336,21 +333,21 @@ describe('useEthSWR', () => {
         }
 
         function Page() {
-          const { data } = useEthSWR([method], {
+          const { data, isValidating } = useEthSWR([method], {
             subscribe: 'block'
           })
+          if (isValidating) {
+            return <div>Loading</div>
+          }
+          console.log({ data, isValidating })
           return <div>Balance, {data}</div>
         }
 
         const { container } = render(<Container />)
-
-        // await waitFor(() =>
-        //   expect(container.firstChild.textContent).toEqual(
-        //     `Balance, ${initialData}`
-        //   )
-        // )
-
+        expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
         mockedLibrary.emit('block', 1000)
+
+        await act(() => sleep(110))
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(

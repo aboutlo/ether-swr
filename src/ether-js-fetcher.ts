@@ -5,10 +5,9 @@ import { ABIError, ABINotFound } from './Errors'
 import { Provider } from './types'
 // import { getContract } from './utils'
 
-export const etherJsFetcher = (
-  provider: Provider,
-  ABIs?: Map<string, any>
-) => (...args) => {
+export const etherJsFetcher = (provider: Provider, ABIs?: Map<string, any>) => (
+  ...args
+) => {
   let parsed
   try {
     parsed = JSON.parse(args[0])
@@ -38,7 +37,7 @@ export const etherJsFetcher = (
   // it's a batch call
   if (Array.isArray(arg1)) {
     const calls: string[][] = parsed
-    // TODO LS faster execution using https://github.com/Destiner/ethcall
+    // TODO LS faster execution using one multicall. Perhaps using https://github.com/Destiner/ethcall
     return Promise.all(
       calls.map(call => {
         return execute(call)
@@ -46,7 +45,6 @@ export const etherJsFetcher = (
     )
   }
   return execute(args)
-
 }
 
 export default etherJsFetcher
