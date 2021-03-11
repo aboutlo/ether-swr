@@ -32,6 +32,17 @@ describe('ethFetcher', () => {
       // SWR spread the array when it invoke the fetcher
       await expect(fetcher(...['getBalance'])).resolves.toEqual(balance)
     })
+    it('returns the values', async () => {
+      const jsonRpcFetchFunc = jest.fn()
+      const library = new Web3ProviderMock(jsonRpcFetchFunc)
+      const balance = 1
+      library.getBalance = jest
+        .fn()
+        .mockImplementation(() => Promise.resolve(balance))
+      const fetcher = etherJsFetcher(library)
+      // SWR spread the array when it invoke the fetcher
+      await expect(fetcher(...[['getBalance']])).resolves.toEqual([balance])
+    })
   })
 
   describe('contract', () => {
@@ -54,6 +65,23 @@ describe('ethFetcher', () => {
       await expect(
         fetcher(...[contract, 'balanceOf', account])
       ).resolves.toEqual(balance)
+    })
+    it('return the values', async () => {
+      const jsonRpcFetchFunc = jest.fn()
+      const library = new Web3ProviderMock(jsonRpcFetchFunc)
+      const balance = 1
+      // workaround create a dynamic method
+      ContractMock.prototype.balanceOf = jest
+        .fn()
+        .mockImplementation(() => Promise.resolve(balance))
+      const contract = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
+      const account = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
+      const ABIs = new Map([[contract, TestABI]])
+      const fetcher = etherJsFetcher(library, ABIs)
+      // SWR spread the array when it invoke the fetcher
+      await expect(
+        fetcher(...[[contract, 'balanceOf', account]])
+      ).resolves.toEqual([balance])
     })
   })
 })

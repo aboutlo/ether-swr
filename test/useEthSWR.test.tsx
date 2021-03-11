@@ -1,6 +1,11 @@
 import { cleanup, render, waitFor, act } from '@testing-library/react'
-import useEthSWR, { EthSWRConfig, etherJsFetcher, cache } from '../src/'
+import useEthSWR, {
+  EthSWRConfig,
+  etherJsFetcher,
+  cache,
+} from '../src/'
 import ERC20ABI from './ERC20.abi.json'
+import { sleep } from './utils'
 
 import * as React from 'react'
 import { useWeb3React } from '@web3-react/core'
@@ -8,6 +13,7 @@ import { Contract } from '@ethersproject/contracts'
 
 import EventEmitterMock from './utils'
 import { ABINotFound } from '../src/Errors'
+import { BigNumber } from 'ethers'
 
 jest.mock('../src/ether-js-fetcher')
 jest.mock('@web3-react/core')
@@ -30,8 +36,9 @@ describe('useEthSWR', () => {
         const mockFetcher = jest.fn().mockReturnValue(mockData)
         mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
 
+        const key: [string] = ['getBalance']
         function Page() {
-          const { data } = useEthSWR(['getBalance'], mockedEthFetcher(), {
+          const { data } = useEthSWR(key, mockedEthFetcher(), {
             dedupingInterval: 0
           })
           return <div>Balance, {data}</div>
@@ -46,6 +53,7 @@ describe('useEthSWR', () => {
           expect(mockFetcher).toBeCalledWith('getBalance')
         })
       })
+
       it('resolves using an existing key', async () => {
         const mockData = 10
         const mockFetcher = jest.fn().mockReturnValue(mockData)
@@ -75,6 +83,28 @@ describe('useEthSWR', () => {
 
         function Page() {
           const { data } = useEthSWR(['getBlockByNumber', 'latest'], {
+            fetcher: mockedEthFetcher(),
+            dedupingInterval: 0
+          })
+          return <div>Block Number, {data}</div>
+        }
+
+        const { container } = render(<Page />)
+
+        await waitFor(() => {
+          expect(container.firstChild.textContent).toEqual(
+            `Block Number, ${mockData}`
+          )
+        })
+      })
+
+      it('resolves multiple keys using the config', async () => {
+        const mockData = 51
+        const mockFetcher = jest.fn().mockReturnValue(mockData)
+        mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
+
+        function Page() {
+          const { data } = useEthSWR([['getBlockByNumber', 'latest']], {
             fetcher: mockedEthFetcher(),
             dedupingInterval: 0
           })
@@ -174,30 +204,92 @@ describe('useEthSWR', () => {
           )
         )
       })
+
       it('resolves using the fetcher passed', async () => {
         const mockData = 10
-        const mockFetcher = jest.fn().mockReturnValue(mockData)
-        mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
+        const loadData = keys =>
+          new Promise(res =>
+            setTimeout(() => {
+              console.log({ keys })
+              res([mockData])
+            }, 100)
+          )
 
         function Page() {
-          const { data } = useEthSWR(
+          const { data, isValidating } = useEthSWR(
             ['0x111', 'balanceOf', '0x01'],
-            mockedEthFetcher(),
+            loadData,
             {
               dedupingInterval: 0
             }
           )
+          if(isValidating) return <div>Loading</div>
           return <div>Balance, {data}</div>
         }
 
         const { container } = render(<Page />)
+        expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
 
-        await waitFor(() => {
-          expect(container.firstChild.textContent).toEqual(
-            `Balance, ${mockData}`
+        await act(() => sleep(110))
+
+        expect(container.textContent).toMatchInlineSnapshot(`"Balance, ${mockData}"`)
+
+        // await waitFor(() => {
+        //   expect(container.firstChild.textContent).toEqual(
+        //     `Balance, ${mockData}`
+        //   )
+        //   expect(mockFetcher).toBeCalledWith('0x111', 'balanceOf', '0x01')
+        // })
+      })
+
+      it('resolves multiple results', async () => {
+        const mockData = 'data'
+        const loadData = keys =>
+          new Promise(res =>
+            setTimeout(() => {
+              res([mockData])
+            }, 100)
           )
-          expect(mockFetcher).toBeCalledWith('0x111', 'balanceOf', '0x01')
-        })
+
+        const multiKeys = [
+          ['0x111', 'balanceOf', '0x01'],
+          ['0x111', 'balanceOf', '0x02']
+        ]
+
+        function Page() {
+          const { data: balances, error, isValidating } = useEthSWR<
+            BigNumber[]
+          >(multiKeys, loadData)
+
+          if (error) {
+            return <div>{error.message}</div>
+          }
+          if (isValidating) {
+            return <div>Loading</div>
+          }
+          return (
+            <div>
+              {balances &&
+                balances.map((balance, index) => {
+                  return <p key={index}>Balance, {balance}</p>
+                })}
+            </div>
+          )
+        }
+
+        const { container } = render(<Page />)
+        expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
+
+        await act(() => sleep(110))
+
+        expect(container.textContent).toMatchInlineSnapshot(`"Balance, data"`)
+
+        // await waitFor(() => {
+        //   expect(container.firstChild.textContent).toEqual(
+        //     `Balance, ${mockData}`
+        //   )
+        //   // expect(mockFetcher).toBeCalledWith(...keys)
+        // })
       })
     })
   })
