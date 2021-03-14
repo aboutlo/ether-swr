@@ -124,6 +124,7 @@ return (
 
 You can use `EthSWRConfig` to have a global fetcher capable of retrieving basic Ethereum information (e.g. block, getBalance)
 or directly interact with a smart contract mapped to its ABI.
+To keep the state fresh you can pass `refreshInterval: 30000` to the `value` object so that behind the scene Ether-SWR will refresh every 30 seconds the data of all the keys mounted in the tree components.
 
 ```js
 import React from 'react'
@@ -201,7 +202,7 @@ export const Wallet = () => {
       )}
       {active && chainId && (
         <EthSWRConfig
-          value={{ provider: library, ABIs: new Map(ABIs) }}
+          value={{ provider: library, ABIs: new Map(ABIs), refreshInterval: 30000 }}
         >
           <EthBalance />
           <TokenList chainId={chainId} />

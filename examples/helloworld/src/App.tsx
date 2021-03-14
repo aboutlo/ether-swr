@@ -172,7 +172,9 @@ export const TokenList = ({ chainId }: { chainId: number }) => {
   const { account } = useWeb3React<Web3Provider>()
   const tokens = TOKENS_BY_NETWORK[chainId]
   // Multiple calls example
-  const { data: balances } = useEtherSWR<BigNumber[]>(tokens.map(t => [t.address, 'balanceOf', account!]))
+  const { data: balances } = useEtherSWR<BigNumber[]>(
+    tokens.map(t => [t.address, 'balanceOf', account!])
+  )
   return (
     <>
       {balances &&
@@ -207,7 +209,11 @@ export const Wallet = () => {
       )}
       {active && chainId && (
         <EthSWRConfig
-          value={{ provider: library, ABIs: new Map(ABIs(chainId)) }}
+          value={{
+            provider: library,
+            ABIs: new Map(ABIs(chainId)),
+            refreshInterval: 30000
+          }}
         >
           <EthBalance />
           <TokenList chainId={chainId} />
