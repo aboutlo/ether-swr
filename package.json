@@ -1,7 +1,7 @@
 {
   "name": "ether-swr",
   "version": "0.5.0",
-  "description": "React Hooks library for Ethereum remote data fetching",
+  "description": "Ether-SWR is a React hook that fetches blockchain data, streamlines the chores to keep the internal state of Decentralized App (DApp) and optimize the RPC calls to an Ethereum node.",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
   "engines": {
