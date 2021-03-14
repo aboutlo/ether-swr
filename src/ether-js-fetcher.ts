@@ -40,6 +40,7 @@ export const etherJsFetcher = (provider: Provider, ABIs?: Map<string, any>) => (
     // TODO LS faster execution using one multicall. Perhaps using https://github.com/Destiner/ethcall
     return Promise.all(
       calls.map(call => {
+        // TODO LS save the key in the cache
         return execute(call)
       })
     )

@@ -1,11 +1,13 @@
 # Ether-SWR
 
-A wrapper to use [SWR](https://swr.vercel.app/) with Ethereum
+Ether-SWR fetch blockchain data, handle the internal state of a Decentralized App (DApp) with a declarative approach via an opinionated wrapper of [SWR](https://swr.vercel.app/).
+Ether-SWR follows the `stale-while-revalidate` (HTTP RFC 5861) concept. It first returns the data from cache (stale), then send the fetch request on chain, and finally come with the up-to-date data.
+In case the same request is made multiple times on the same page only one request is made.
 
 [![view on npm](https://img.shields.io/npm/v/ether-swr.svg)](https://www.npmjs.org/package/ether-swr)
 [![](https://github.com/aboutlo/ether-swr/workflows/ci/badge.svg)](https://github.com/aboutlo/ether-swr/actions?query=workflow%3Aci)
 
-## Declarative fetch
+## API
 
 ### Interact with Ethereum methods (e.g. getBalance, blockNumber)
 
@@ -20,8 +22,25 @@ You can use all the methods provided by a Web3Provider from [Ether.js]()
 ```typescript
 const { data: balance } = useEthSWR([
   '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI contract
-  'balanceOf',                                  // Method
-  '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643'  // holder
+  'balanceOf', // Method
+  '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643' // holder
+])
+```
+
+### Make multiple requests at once with a smart contract (e.g ERC20 )
+
+```typescript
+const { data: balances } = useEthSWR([
+  [
+    '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI contract
+    'balanceOf', // Method
+    '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643' // holder 1
+  ],
+  [
+    '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI contract
+    'balanceOf', // Method
+    '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643' // holder 2
+  ]
 ])
 ```
 

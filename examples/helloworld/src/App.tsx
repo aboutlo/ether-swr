@@ -3,9 +3,11 @@ import { Web3ReactProvider, useWeb3React } from '@web3-react/core'
 import { Web3Provider } from '@ethersproject/providers'
 import { InjectedConnector } from '@web3-react/injected-connector'
 import { BigNumber } from 'ethers'
+import { Zero } from '@ethersproject/constants'
 import { formatEther, formatUnits } from '@ethersproject/units'
 import useEthSWR, { EthSWRConfig } from 'ether-swr'
 import ERC20ABI from './ERC20.abi.json'
+import useEtherSWR from 'ether-swr/esm'
 
 export const Networks = {
   MainNet: 1,
@@ -167,11 +169,16 @@ export const TokenBalance = ({
 }
 
 export const TokenList = ({ chainId }: { chainId: number }) => {
+  const { account } = useWeb3React<Web3Provider>()
+  const tokens = TOKENS_BY_NETWORK[chainId]
+  // Multiple calls example
+  const { data: balances } = useEtherSWR<BigNumber[]>(tokens.map(t => [t.address, 'balanceOf', account!]))
   return (
     <>
-      {TOKENS_BY_NETWORK[chainId].map(token => (
-        <TokenBalance key={token.address} {...token} />
-      ))}
+      {balances &&
+        TOKENS_BY_NETWORK[chainId]
+          .filter((t, index) => balances[index].gt(Zero))
+          .map(token => <TokenBalance key={token.address} {...token} />)}
     </>
   )
 }
