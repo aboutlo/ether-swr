@@ -94,7 +94,7 @@ function useEtherSWR<Data = any, Error = any>(
         filter = subscribe
         // TODO LS this depends on etherjs
         config.provider.on(filter, () => {
-          console.log('on:', { filter }, cache.keys())
+          // console.log('on:', { filter }, cache.keys())
           mutate(joinKey, undefined, true)
         })
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
@@ -142,11 +142,10 @@ function useEtherSWR<Data = any, Error = any>(
       // const joinKey = isMulticall ? cache.serializeKey(serializedKey)[0] : _key
       if (typeof subscribe === 'string') {
         filter = contract.filters[subscribe]()
-        //FIXME _key has to be equals to the serialization key we sent to SWR
-        console.log('set:', { filter }, cache.keys())
+        // console.log('set:', { filter }, cache.keys())
         contract.on(filter, value => {
           // auto refresh
-          console.log('on:', { filter }, cache.keys())
+          // console.log('on:', { filter }, cache.keys())
           mutate(serializedKey, undefined, true)
         })
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {

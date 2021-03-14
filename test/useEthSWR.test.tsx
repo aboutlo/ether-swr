@@ -206,7 +206,7 @@ describe('useEthSWR', () => {
         const loadData = keys =>
           new Promise(res =>
             setTimeout(() => {
-              console.log({ keys })
+              // console.log({ keys })
               res([mockData])
             }, 100)
           )
