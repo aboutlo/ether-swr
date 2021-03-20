@@ -9,19 +9,19 @@ import { ABINotFound } from './Errors'
 import { getContract, contracts } from './utils'
 
 export { cache } from 'swr'
-
+export type etherKeyFuncInterface = () => ethKeyInterface | ethKeysInterface
 export type ethKeyInterface = [string, any?, any?, any?, any?]
 export type ethKeysInterface = string[][]
 
 function useEtherSWR<Data = any, Error = any>(
-  key: ethKeyInterface | ethKeysInterface
+  key: ethKeyInterface | ethKeysInterface | etherKeyFuncInterface
 ): responseInterface<Data, Error>
 function useEtherSWR<Data = any, Error = any>(
-  key: ethKeyInterface | ethKeysInterface,
+  key: ethKeyInterface | ethKeysInterface | etherKeyFuncInterface,
   config?: EthSWRConfigInterface<Data, Error>
 ): responseInterface<Data, Error>
 function useEtherSWR<Data = any, Error = any>(
-  key: ethKeyInterface | ethKeysInterface,
+  key: ethKeyInterface | ethKeysInterface | etherKeyFuncInterface,
   fetcher?: any, //fetcherFn<Data>,
   config?: EthSWRConfigInterface<Data, Error>
 ): responseInterface<Data, Error>

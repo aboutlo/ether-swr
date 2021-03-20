@@ -19,6 +19,13 @@ const mockedEthFetcher = etherJsFetcher as jest.Mock
 const mockeduseWeb3React = useWeb3React as jest.Mock
 const mockedContract = (Contract as unknown) as jest.Mock
 
+const fetcherMock = mockData => () =>
+  new Promise(res =>
+    setTimeout(() => {
+      res([mockData])
+    }, 100)
+  )
+
 describe('useEtherSWR', () => {
   describe('key', () => {
     describe('base', () => {
@@ -48,6 +55,31 @@ describe('useEtherSWR', () => {
           )
           expect(mockFetcher).toBeCalledWith('getBalance')
         })
+      })
+
+      it('uses a function to generate the key and resolves using the fetcher passed', async () => {
+        const mockData = 10
+
+        function Page() {
+          const { data, isValidating } = useEtherSWR(
+            () => ['0x111', 'balanceOf', '0x01'],
+            fetcherMock(mockData),
+            {
+              dedupingInterval: 0
+            }
+          )
+          if (isValidating) return <div>Loading</div>
+          return <div>Balance, {data}</div>
+        }
+
+        const { container } = render(<Page />)
+        expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
+
+        await act(() => sleep(110))
+
+        expect(container.textContent).toMatchInlineSnapshot(
+          `"Balance, ${mockData}"`
+        )
       })
 
       it('resolves using an existing key', async () => {
@@ -231,13 +263,6 @@ describe('useEtherSWR', () => {
         expect(container.textContent).toMatchInlineSnapshot(
           `"Balance, ${mockData}"`
         )
-
-        // await waitFor(() => {
-        //   expect(container.firstChild.textContent).toEqual(
-        //     `Balance, ${mockData}`
-        //   )
-        //   expect(mockFetcher).toBeCalledWith('0x111', 'balanceOf', '0x01')
-        // })
       })
 
       it('resolves multiple results', async () => {
