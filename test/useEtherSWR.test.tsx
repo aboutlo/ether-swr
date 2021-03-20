@@ -1,5 +1,5 @@
 import { cleanup, render, waitFor, act } from '@testing-library/react'
-import useEthSWR, { EthSWRConfig, etherJsFetcher, cache } from '../src/'
+import useEtherSWR, { EtherSWRConfig, etherJsFetcher, cache } from '../src/'
 import ERC20ABI from './ERC20.abi.json'
 import { sleep } from './utils'
 
@@ -19,7 +19,7 @@ const mockedEthFetcher = etherJsFetcher as jest.Mock
 const mockeduseWeb3React = useWeb3React as jest.Mock
 const mockedContract = (Contract as unknown) as jest.Mock
 
-describe('useEthSWR', () => {
+describe('useEtherSWR', () => {
   describe('key', () => {
     describe('base', () => {
       beforeEach(() => {
@@ -34,7 +34,7 @@ describe('useEthSWR', () => {
 
         const key: [string] = ['getBalance']
         function Page() {
-          const { data } = useEthSWR(key, mockedEthFetcher(), {
+          const { data } = useEtherSWR(key, mockedEthFetcher(), {
             dedupingInterval: 0
           })
           return <div>Balance, {data}</div>
@@ -56,7 +56,7 @@ describe('useEthSWR', () => {
         mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
 
         function Page() {
-          const { data } = useEthSWR(['getBalance'], mockedEthFetcher(), {
+          const { data } = useEtherSWR(['getBalance'], mockedEthFetcher(), {
             dedupingInterval: 0
           })
           return <div>Balance, {data}</div>
@@ -78,7 +78,7 @@ describe('useEthSWR', () => {
         mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
 
         function Page() {
-          const { data } = useEthSWR(['getBlockByNumber', 'latest'], {
+          const { data } = useEtherSWR(['getBlockByNumber', 'latest'], {
             fetcher: mockedEthFetcher(),
             dedupingInterval: 0
           })
@@ -100,7 +100,7 @@ describe('useEthSWR', () => {
         mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
 
         function Page() {
-          const { data } = useEthSWR([['getBlockByNumber', 'latest']], {
+          const { data } = useEtherSWR([['getBlockByNumber', 'latest']], {
             fetcher: mockedEthFetcher(),
             dedupingInterval: 0
           })
@@ -130,7 +130,7 @@ describe('useEthSWR', () => {
         function Container() {
           const { library } = useWeb3React()
           return (
-            <EthSWRConfig
+            <EtherSWRConfig
               value={{
                 dedupingInterval: 0,
                 // ABIs: new Map(),  // FIXME is it better?
@@ -139,13 +139,13 @@ describe('useEthSWR', () => {
               }}
             >
               <Page />
-            </EthSWRConfig>
+            </EtherSWRConfig>
           )
         }
 
         function Page() {
           // FIXME if this key isn't unique some randome failure due to SWR
-          const { data } = useEthSWR(['getBalance', 'pending'])
+          const { data } = useEtherSWR(['getBalance', 'pending'])
           return <div>Balance, {data}</div>
         }
 
@@ -180,7 +180,7 @@ describe('useEthSWR', () => {
 
         function Page() {
           const { library } = useWeb3React()
-          const { data } = useEthSWR(
+          const { data } = useEtherSWR(
             ['0x6b175474e89094c44da98b954eedeac495271d0f', 'balanceOf', '0x01'],
             mockedEthFetcher(),
             {
@@ -212,7 +212,7 @@ describe('useEthSWR', () => {
           )
 
         function Page() {
-          const { data, isValidating } = useEthSWR(
+          const { data, isValidating } = useEtherSWR(
             ['0x111', 'balanceOf', '0x01'],
             loadData,
             {
@@ -255,7 +255,7 @@ describe('useEthSWR', () => {
         ]
 
         function Page() {
-          const { data: balances, error, isValidating } = useEthSWR<
+          const { data: balances, error, isValidating } = useEtherSWR<
             BigNumber[]
           >(multiKeys, loadData)
 
@@ -318,7 +318,7 @@ describe('useEthSWR', () => {
         function Container() {
           const { library } = useWeb3React()
           return (
-            <EthSWRConfig
+            <EtherSWRConfig
               value={{
                 refreshInterval: 0,
                 dedupingInterval: 0,
@@ -328,12 +328,12 @@ describe('useEthSWR', () => {
               }}
             >
               <Page />
-            </EthSWRConfig>
+            </EtherSWRConfig>
           )
         }
 
         function Page() {
-          const { data, isValidating } = useEthSWR([method], {
+          const { data, isValidating } = useEtherSWR([method], {
             subscribe: 'block'
           })
           if (isValidating) {
@@ -380,7 +380,7 @@ describe('useEthSWR', () => {
         function Container() {
           const { library } = useWeb3React()
           return (
-            <EthSWRConfig
+            <EtherSWRConfig
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(),
@@ -389,12 +389,12 @@ describe('useEthSWR', () => {
               }}
             >
               <Page />
-            </EthSWRConfig>
+            </EtherSWRConfig>
           )
         }
 
         function Page() {
-          const { data } = useEthSWR(['getBalance'], {
+          const { data } = useEtherSWR(['getBalance'], {
             subscribe: [
               {
                 name: 'block'
@@ -441,7 +441,7 @@ describe('useEthSWR', () => {
         function Container() {
           const { library } = useWeb3React()
           return (
-            <EthSWRConfig
+            <EtherSWRConfig
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(),
@@ -450,12 +450,12 @@ describe('useEthSWR', () => {
               }}
             >
               <Page />
-            </EthSWRConfig>
+            </EtherSWRConfig>
           )
         }
 
         function Page() {
-          const { data, mutate } = useEthSWR(['getBalance'], {
+          const { data, mutate } = useEtherSWR(['getBalance'], {
             subscribe: [
               {
                 name: 'block',
@@ -521,7 +521,7 @@ describe('useEthSWR', () => {
         function Container() {
           const { library } = useWeb3React()
           return (
-            <EthSWRConfig
+            <EtherSWRConfig
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
@@ -532,13 +532,13 @@ describe('useEthSWR', () => {
               }}
             >
               <Page />
-            </EthSWRConfig>
+            </EtherSWRConfig>
           )
         }
 
         function Page() {
           const { account } = useWeb3React()
-          const { data } = useEthSWR([contractAddr, 'balanceOf', account], {
+          const { data } = useEtherSWR([contractAddr, 'balanceOf', account], {
             subscribe: 'Transfer'
           })
           return <div>Balance, {data}</div>
@@ -587,7 +587,7 @@ describe('useEthSWR', () => {
         function Container() {
           const { library } = useWeb3React()
           return (
-            <EthSWRConfig
+            <EtherSWRConfig
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
@@ -598,13 +598,13 @@ describe('useEthSWR', () => {
               }}
             >
               <Page />
-            </EthSWRConfig>
+            </EtherSWRConfig>
           )
         }
 
         function Page() {
           const { account } = useWeb3React()
-          const { data } = useEthSWR([[contractAddr, 'balanceOf', account]], {
+          const { data } = useEtherSWR([[contractAddr, 'balanceOf', account]], {
             subscribe: 'Transfer'
           })
           return <div>Balance, {data}</div>
@@ -655,7 +655,7 @@ describe('useEthSWR', () => {
         function Container() {
           const { library, active } = useWeb3React()
           return (
-            <EthSWRConfig
+            <EtherSWRConfig
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
@@ -666,13 +666,13 @@ describe('useEthSWR', () => {
               }}
             >
               <Page />
-            </EthSWRConfig>
+            </EtherSWRConfig>
           )
         }
 
         function Page() {
           const { account } = useWeb3React()
-          const { data } = useEthSWR(
+          const { data } = useEtherSWR(
             [
               '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf',
               'balanceOf',
@@ -732,7 +732,7 @@ describe('useEthSWR', () => {
         function Container() {
           const { library, active } = useWeb3React()
           return (
-            <EthSWRConfig
+            <EtherSWRConfig
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
@@ -743,13 +743,13 @@ describe('useEthSWR', () => {
               }}
             >
               <Page />
-            </EthSWRConfig>
+            </EtherSWRConfig>
           )
         }
 
         function Page() {
           const { account } = useWeb3React()
-          const { data } = useEthSWR(
+          const { data } = useEtherSWR(
             [
               '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf',
               'balanceOf',
@@ -811,7 +811,7 @@ describe('useEthSWR', () => {
         function Container() {
           const { library, active } = useWeb3React()
           return (
-            <EthSWRConfig
+            <EtherSWRConfig
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
@@ -822,13 +822,13 @@ describe('useEthSWR', () => {
               }}
             >
               <Page />
-            </EthSWRConfig>
+            </EtherSWRConfig>
           )
         }
 
         function Page() {
           const { account } = useWeb3React()
-          const { data, mutate } = useEthSWR(
+          const { data, mutate } = useEtherSWR(
             [
               '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf',
               'balanceOf',
@@ -902,7 +902,7 @@ describe('useEthSWR', () => {
         function Container() {
           const { library, active } = useWeb3React()
           return (
-            <EthSWRConfig
+            <EtherSWRConfig
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
@@ -913,13 +913,13 @@ describe('useEthSWR', () => {
               }}
             >
               <Page />
-            </EthSWRConfig>
+            </EtherSWRConfig>
           )
         }
 
         function Page() {
           const { account } = useWeb3React()
-          const { data, mutate } = useEthSWR(
+          const { data, mutate } = useEtherSWR(
             [
               '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf',
               'balanceOf',

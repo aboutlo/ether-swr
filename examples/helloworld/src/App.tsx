@@ -5,7 +5,7 @@ import { InjectedConnector } from '@web3-react/injected-connector'
 import { BigNumber } from 'ethers'
 import { Zero } from '@ethersproject/constants'
 import { formatEther, formatUnits } from '@ethersproject/units'
-import useEthSWR, { EthSWRConfig } from 'ether-swr'
+import useEtherSWR, { EthSWRConfig } from 'ether-swr'
 import ERC20ABI from './ERC20.abi.json'
 import useEtherSWR from 'ether-swr/esm'
 
@@ -87,7 +87,7 @@ function getLibrary(provider: any): Web3Provider {
 
 export const EthBalance = () => {
   const { account } = useWeb3React<Web3Provider>()
-  const { data: balance, mutate } = useEthSWR(
+  const { data: balance, mutate } = useEtherSWR(
     ['getBalance', account, 'latest'],
     {
       subscribe: [
@@ -120,42 +120,45 @@ export const TokenBalance = ({
 }) => {
   const { account } = useWeb3React<Web3Provider>()
 
-  const { data: balance, mutate } = useEthSWR([address, 'balanceOf', account], {
-    subscribe: [
-      // A filter from anyone to me
-      {
-        name: 'Transfer',
-        topics: [null, account],
-        on: (
-          state: BigNumber,
-          fromAddress: string,
-          toAddress: string,
-          amount: BigNumber,
-          event: any
-        ) => {
-          console.log('receive', { event })
-          const update = state.add(amount)
-          mutate(update, false) // optimistic update skip re-fetch
+  const { data: balance, mutate } = useEtherSWR(
+    [address, 'balanceOf', account],
+    {
+      subscribe: [
+        // A filter from anyone to me
+        {
+          name: 'Transfer',
+          topics: [null, account],
+          on: (
+            state: BigNumber,
+            fromAddress: string,
+            toAddress: string,
+            amount: BigNumber,
+            event: any
+          ) => {
+            console.log('receive', { event })
+            const update = state.add(amount)
+            mutate(update, false) // optimistic update skip re-fetch
+          }
+        },
+        // A filter from me to anyone
+        {
+          name: 'Transfer',
+          topics: [account, null],
+          on: (
+            state: BigNumber,
+            fromAddress: string,
+            toAddress: string,
+            amount: BigNumber,
+            event: any
+          ) => {
+            console.log('send', { event })
+            const update = state.sub(amount)
+            mutate(update, false) // optimistic update skip re-fetch
+          }
         }
-      },
-      // A filter from me to anyone
-      {
-        name: 'Transfer',
-        topics: [account, null],
-        on: (
-          state: BigNumber,
-          fromAddress: string,
-          toAddress: string,
-          amount: BigNumber,
-          event: any
-        ) => {
-          console.log('send', { event })
-          const update = state.sub(amount)
-          mutate(update, false) // optimistic update skip re-fetch
-        }
-      }
-    ]
-  })
+      ]
+    }
+  )
 
   if (!balance) {
     return <div>...</div>

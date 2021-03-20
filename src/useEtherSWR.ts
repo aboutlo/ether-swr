@@ -29,7 +29,6 @@ function useEtherSWR<Data = any, Error = any>(
   ...args
 ): responseInterface<Data, Error> {
   let _key: ethKeyInterface
-  let _keys: ethKeysInterface
   let fn: any //fetcherFn<Data> | undefined
   let config: EthSWRConfigInterface<Data, Error> = { subscribe: [] }
   let isMulticall = false
@@ -181,6 +180,7 @@ function useEtherSWR<Data = any, Error = any>(
   return useSWR(isMulticall ? serializedKey : _key, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider
-export { EthSWRConfig }
+const EtherSWRConfig = EthSWRConfigContext.Provider
+export { EthSWRConfig, EtherSWRConfig }
 
 export default useEtherSWR

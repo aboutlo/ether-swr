@@ -12,7 +12,7 @@ In case the same request is made multiple times on the same page only one reques
 ### Interact with Ethereum methods (e.g. getBalance, blockNumber)
 
 ```typescript
-const { data: balance } = useEthSWR(['getBalance', 'latest'])
+const { data: balance } = useEtherSWR(['getBalance', 'latest'])
 ```
 
 You can use all the methods provided by a Web3Provider from [Ether.js]()
@@ -20,7 +20,7 @@ You can use all the methods provided by a Web3Provider from [Ether.js]()
 ### Interact with a smart contract (e.g ERC20 )
 
 ```typescript
-const { data: balance } = useEthSWR([
+const { data: balance } = useEtherSWR([
   '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI contract
   'balanceOf', // Method
   '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643' // holder
@@ -30,7 +30,7 @@ const { data: balance } = useEthSWR([
 ### Make multiple requests at once with a smart contract (e.g ERC20 )
 
 ```typescript
-const { data: balances } = useEthSWR([
+const { data: balances } = useEtherSWR([
   [
     '0x6b175474e89094c44da98b954eedeac495271d0f', // DAI contract
     'balanceOf', // Method
@@ -51,7 +51,7 @@ You can use all the methods provided by a contract as long as you have provided 
 Subscribe to a topic refresh automatically the underline data once it's dispatched
 
 ```typescript
-const { data: balance, mutate } = useEthSWR([address, 'balanceOf', account], {
+const { data: balance, mutate } = useEtherSWR([address, 'balanceOf', account], {
   subscribe: [
     // A filter from anyone to me
     {
@@ -76,7 +76,7 @@ return (
 Subscribe to a topic providing a callback allows to use an optimistic update
 
 ```typescript
-const { data: balance, mutate } = useEthSWR([address, 'balanceOf', account], {
+const { data: balance, mutate } = useEtherSWR([address, 'balanceOf', account], {
   subscribe: [
     // A filter from anyone to me
     {
@@ -133,7 +133,7 @@ import { Web3Provider } from '@ethersproject/providers'
 import { InjectedConnector } from '@web3-react/injected-connector'
 import { BigNumber } from 'ethers'
 import { formatEther, formatUnits } from '@ethersproject/units'
-import useEthSWR, { EthSWRConfig } from 'ether-swr'
+import useEtherSWR, { EthSWRConfig } from 'ether-swr'
 import ERC20ABI from './ERC20.abi.json'
 
 const ABIs = [
@@ -142,7 +142,7 @@ const ABIs = [
 
 const EthBalance = () => {
   const { account } = useWeb3React<Web3Provider>()
-  const { data: balance } = useEthSWR(['getBalance', account, 'latest'])
+  const { data: balance } = useEtherSWR(['getBalance', account, 'latest'])
 
   if (!balance) {
     return <div>...</div>
@@ -157,7 +157,7 @@ const TokenBalance = ({ symbol, address, decimals }: {
 }) => {
   const { account } = useWeb3React<Web3Provider>()
 
-  const { data: balance } = useEthSWR([address, 'balanceOf', account])
+  const { data: balance } = useEtherSWR([address, 'balanceOf', account])
 
   if (!balance) {
     return <div>...</div>

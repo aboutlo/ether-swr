@@ -1,5 +1,5 @@
 import { cleanup, render, waitFor, act } from '@testing-library/react'
-import useEthSWR, { EthSWRConfig, etherJsFetcher, cache } from '../src/'
+import useEtherSWR, { EthSWRConfig, etherJsFetcher, cache } from '../src/'
 import ERC20ABI from './ERC20.abi.json'
 
 import * as React from 'react'
@@ -66,22 +66,25 @@ describe('EtherSWRConfig', () => {
 
     function Page() {
       const { account } = useWeb3React()
-      const { data, mutate } = useEthSWR([contractAddr, 'balanceOf', account], {
-        // A filter from anyone to me
-        subscribe: [
-          {
-            name: 'Transfer',
-            topics: [null, account],
-            on: callback.mockImplementation(
-              // currentData, all the props from the event
-              (data, fromAddress, toAddress, amount, event) => {
-                const update = data + amount
-                mutate(update, false) // optimistic update skip re-fetch
-              }
-            )
-          }
-        ]
-      })
+      const { data, mutate } = useEtherSWR(
+        [contractAddr, 'balanceOf', account],
+        {
+          // A filter from anyone to me
+          subscribe: [
+            {
+              name: 'Transfer',
+              topics: [null, account],
+              on: callback.mockImplementation(
+                // currentData, all the props from the event
+                (data, fromAddress, toAddress, amount, event) => {
+                  const update = data + amount
+                  mutate(update, false) // optimistic update skip re-fetch
+                }
+              )
+            }
+          ]
+        }
+      )
       return <div>Balance, {data}</div>
     }
 
