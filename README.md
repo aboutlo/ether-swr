@@ -1,8 +1,11 @@
 # Ether-SWR
 
-Ether-SWR is a React hook that fetches Ethereum data, streamlines the chores to keep the internal state of Decentralized App (DApp) and optimize the RPC calls to an Ethereum node. It does so with a declarative approach via an opinionated wrapper of [SWR](https://swr.vercel.app/).
-Ether-SWR follows the `stale-while-revalidate` (HTTP RFC 5861) concept. It first returns the data from cache (stale), then send the fetch request on chain, and finally come with the up-to-date data.
-In case the same request is made multiple times on the same page only one request is made.
+Ether-SWR is a React hook that fetches Ethereum data, streamlines the chores to keep the internal state of Decentralized App (DApp) and optimize the RPC calls to an Ethereum node. 
+It does so with a declarative approach via an opinionated wrapper of [SWR](https://swr.vercel.app/).
+
+Ether-SWR follows the `stale-while-revalidate` (HTTP RFC 5861) concept: first it returns the data from cache (stale), then send the fetch request on chain, and finally come with the up-to-date data.
+
+In case the same request is defined multiple times on the same rendered component tree only one request is made because SWR deduping process.
 
 [![view on npm](https://img.shields.io/npm/v/ether-swr.svg)](https://www.npmjs.org/package/ether-swr)
 [![](https://github.com/aboutlo/ether-swr/workflows/ci/badge.svg)](https://github.com/aboutlo/ether-swr/actions?query=workflow%3Aci)
