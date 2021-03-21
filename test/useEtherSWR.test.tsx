@@ -10,6 +10,7 @@ import { Contract } from '@ethersproject/contracts'
 import EventEmitterMock from './utils'
 import { ABINotFound } from '../src/Errors'
 import { BigNumber } from 'ethers'
+import { Web3Provider } from '@ethersproject/providers'
 
 jest.mock('../src/ether-js-fetcher')
 jest.mock('@web3-react/core')
@@ -148,7 +149,7 @@ describe('useEtherSWR', () => {
         })
       })
 
-      it('resolves using the context', async () => {
+      it('resolves using the context with library', async () => {
         const mockData = 11111
         // Look convolute bu keep in mind the fetcher is a curled function
         mockedEthFetcher.mockImplementation(
@@ -544,7 +545,13 @@ describe('useEtherSWR', () => {
         mockedContract.mockImplementation(() => contractInstance)
 
         function Container() {
-          const { library } = useWeb3React()
+          const { library } = useWeb3React<Web3Provider>()
+          // As provider you pick a balance by address
+          // library.getBalance('0x111')
+          // As signer you have _address
+          // library.getSigner()._address
+          // As signer you have getBalance without specify the address
+          // library.getSigner().getBalance()
           return (
             <EtherSWRConfig
               value={{

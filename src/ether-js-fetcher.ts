@@ -1,13 +1,15 @@
-import { Contract } from 'ethers'
+import { Contract, Wallet } from 'ethers'
 import { isAddress } from '@ethersproject/address'
 import { ABIError, ABINotFound } from './Errors'
-// import { Web3Provider } from '@ethersproject/providers'
-import { Provider } from './types'
-// import { getContract } from './utils'
+import { JsonRpcSigner, Provider, Web3Provider } from '@ethersproject/providers'
 
-export const etherJsFetcher = (provider: Provider, ABIs?: Map<string, any>) => (
-  ...args
-) => {
+export const etherJsFetcher = (
+  provider: Provider | Web3Provider,
+  // Wallet from EtherJS
+  // JsonRpcSigner from useWeb3React
+  signer: Wallet | JsonRpcSigner,
+  ABIs?: Map<string, any>
+) => (...args) => {
   let parsed
   try {
     parsed = JSON.parse(args[0])
@@ -16,7 +18,7 @@ export const etherJsFetcher = (provider: Provider, ABIs?: Map<string, any>) => (
   }
   const [arg1] = parsed || args
 
-  const execute = (parameters): Promise<any> => {
+  const execute = (parameters: string[]): Promise<any> => {
     const [param1, param2, ...otherParams] = parameters
     // it's a contract
     if (isAddress(param1)) {
@@ -26,11 +28,23 @@ export const etherJsFetcher = (provider: Provider, ABIs?: Map<string, any>) => (
       const method = param2
       const abi = ABIs.get(address)
       if (!abi) throw new ABINotFound(`ABI not found for ${address}`)
-      const contract = new Contract(address, abi, provider.getSigner())
+      const contract = new Contract(address, abi, signer)
       return contract[method](...otherParams)
     }
     // it's a eth call
     const method = param1
+
+    // fallback to signer methods using the signer address
+    if (
+      ['getBalance', 'getTransactionCount'].includes(method) &&
+      !isAddress(param2)
+    ) {
+      const address =
+        signer instanceof Wallet ? signer.address : signer._address
+      // FIXME address could be null if an index has been passed
+      return provider[method](address, param2, ...otherParams)
+    }
+
     return provider[method](param2, ...otherParams)
   }
 

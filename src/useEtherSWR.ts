@@ -7,6 +7,7 @@ import EthSWRConfigContext from './eth-swr-config'
 import { etherJsFetcher } from './ether-js-fetcher'
 import { ABINotFound } from './Errors'
 import { getContract, contracts } from './utils'
+import { Provider } from '@ethersproject/providers'
 
 export { cache } from 'swr'
 export type etherKeyFuncInterface = () => ethKeyInterface | ethKeysInterface
@@ -51,8 +52,13 @@ function useEtherSWR<Data = any, Error = any>(
   config = Object.assign({}, useContext(EthSWRConfigContext), config)
 
   if (fn === undefined) {
-    // fn = config.fetcher(library, config.ABIs) as any
-    fn = config.fetcher || etherJsFetcher(config.provider, config.ABIs)
+    fn =
+      config.fetcher ||
+      etherJsFetcher(
+        config.provider,
+        config.signer || config.provider.getSigner(),
+        config.ABIs
+      )
   }
 
   // TODO LS implement a getTarget and change subscribe interface {subscribe: {name: "Transfer", target: 0x01}}
@@ -120,7 +126,12 @@ function useEtherSWR<Data = any, Error = any>(
   // contract filter (e.g. balanceOf, approve, etc)
   // FIXME merge in only one useEffect
   useEffect(() => {
-    if (!config.provider || !config.subscribe || !isAddress(target)) {
+    if (
+      !config.provider ||
+      (!config.signer && !config.provider) ||
+      !config.subscribe ||
+      !isAddress(target)
+    ) {
       return () => ({})
     }
 
@@ -129,8 +140,11 @@ function useEtherSWR<Data = any, Error = any>(
     if (!abi) {
       throw new ABINotFound(`Missing ABI for ${target}`)
     }
-    // const contract = new Contract(target, abi, config.provider.getSigner())
-    const contract = getContract(target, abi, config.provider.getSigner())
+    const signer =
+      config.signer || config.provider instanceof Provider
+        ? null
+        : config.provider.getSigner()
+    const contract = getContract(target, abi, signer)
 
     const subscribers = Array.isArray(config.subscribe)
       ? config.subscribe
