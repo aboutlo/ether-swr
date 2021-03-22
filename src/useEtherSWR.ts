@@ -7,12 +7,18 @@ import EthSWRConfigContext from './eth-swr-config'
 import { etherJsFetcher } from './ether-js-fetcher'
 import { ABINotFound } from './Errors'
 import { getContract, contracts } from './utils'
-import { Provider } from '@ethersproject/providers'
 
 export { cache } from 'swr'
 export type etherKeyFuncInterface = () => ethKeyInterface | ethKeysInterface
 export type ethKeyInterface = [string, any?, any?, any?, any?]
 export type ethKeysInterface = string[][]
+
+const getSigner = (config: EthSWRConfigInterface) => {
+  if (config.signer) {
+    return config.signer
+  }
+  return config.provider.getSigner()
+}
 
 function useEtherSWR<Data = any, Error = any>(
   key: ethKeyInterface | ethKeysInterface | etherKeyFuncInterface
@@ -54,11 +60,7 @@ function useEtherSWR<Data = any, Error = any>(
   if (fn === undefined) {
     fn =
       config.fetcher ||
-      etherJsFetcher(
-        config.provider,
-        config.signer || config.provider.getSigner(),
-        config.ABIs
-      )
+      etherJsFetcher(config.provider, getSigner(config), config.ABIs)
   }
 
   // TODO LS implement a getTarget and change subscribe interface {subscribe: {name: "Transfer", target: 0x01}}
@@ -128,7 +130,7 @@ function useEtherSWR<Data = any, Error = any>(
   useEffect(() => {
     if (
       !config.provider ||
-      (!config.signer && !config.provider) ||
+      !getSigner(config) ||
       !config.subscribe ||
       !isAddress(target)
     ) {
@@ -140,11 +142,8 @@ function useEtherSWR<Data = any, Error = any>(
     if (!abi) {
       throw new ABINotFound(`Missing ABI for ${target}`)
     }
-    const signer =
-      config.signer || config.provider instanceof Provider
-        ? null
-        : config.provider.getSigner()
-    const contract = getContract(target, abi, signer)
+
+    const contract = getContract(target, abi, getSigner(config))
 
     const subscribers = Array.isArray(config.subscribe)
       ? config.subscribe
