@@ -1,13 +1,16 @@
 import React from 'react'
 import { Web3ReactProvider, useWeb3React } from '@web3-react/core'
-import { Web3Provider } from '@ethersproject/providers'
+import {
+  ExternalProvider,
+  JsonRpcFetchFunc,
+  Web3Provider
+} from '@ethersproject/providers'
 import { InjectedConnector } from '@web3-react/injected-connector'
 import { BigNumber } from 'ethers'
 import { Zero } from '@ethersproject/constants'
 import { formatEther, formatUnits } from '@ethersproject/units'
-import useEtherSWR, { EthSWRConfig } from 'ether-swr'
+import useEtherSWR, { EtherSWRConfig } from 'ether-swr'
 import ERC20ABI from './ERC20.abi.json'
-import useEtherSWR from 'ether-swr/esm'
 
 export const Networks = {
   MainNet: 1,
@@ -79,7 +82,9 @@ export const injectedConnector = new InjectedConnector({
   ]
 })
 
-function getLibrary(provider: any): Web3Provider {
+function getLibrary(
+  provider: ExternalProvider | JsonRpcFetchFunc
+): Web3Provider {
   const library = new Web3Provider(provider)
   library.pollingInterval = 12000
   return library
@@ -211,7 +216,7 @@ export const Wallet = () => {
         </button>
       )}
       {active && chainId && (
-        <EthSWRConfig
+        <EtherSWRConfig
           value={{
             provider: library,
             ABIs: new Map(ABIs(chainId)),
@@ -220,7 +225,7 @@ export const Wallet = () => {
         >
           <EthBalance />
           <TokenList chainId={chainId} />
-        </EthSWRConfig>
+        </EtherSWRConfig>
       )}
     </div>
   )
