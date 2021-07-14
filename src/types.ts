@@ -1,4 +1,4 @@
-import { ConfigInterface } from 'swr'
+import { SWRConfiguration } from 'swr'
 import { Wallet } from 'ethers'
 import { Listener, Provider } from '@ethersproject/abstract-provider'
 import { Signer } from '@ethersproject/abstract-signer'
@@ -14,7 +14,7 @@ export type Web3Provider = {
 }
 
 export interface EthSWRConfigInterface<Data = any, Error = any>
-  extends ConfigInterface<Data, Error> {
+  extends SWRConfiguration<Data, Error> {
   ABIs?: Map<string, any>
   signer?: Wallet | JsonRpcSigner // e.g. EtherJs wallet
   provider?: Provider | Web3Provider | any // pass only this e.g (useWeb3React) which has a provider with signer. FallbackProvider or Alchemy or Infura etc don't have the getSigner

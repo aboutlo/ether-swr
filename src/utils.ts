@@ -1,7 +1,11 @@
-import { Contract } from 'ethers'
+import { Contract, ContractInterface } from 'ethers'
 
 export const contracts = new Map<string, Contract>()
-export function getContract(address, abi, signer) {
+export function getContract(
+  address: string,
+  abi: ContractInterface,
+  signer: any
+): Contract {
   let contract = contracts.get(address)
   if (contract) {
     return contract
