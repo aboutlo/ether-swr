@@ -9,7 +9,7 @@ export const etherJsFetcher = (
   // JsonRpcSigner from useWeb3React
   signer: Wallet | JsonRpcSigner,
   ABIs?: Map<string, any>
-) => (...args) => {
+) => (...args: any[]) => {
   let parsed
   try {
     parsed = JSON.parse(args[0])

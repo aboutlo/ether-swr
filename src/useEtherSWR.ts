@@ -1,6 +1,6 @@
 import { useContext, useEffect } from 'react'
 import useSWR, { cache, mutate } from 'swr'
-import { responseInterface } from 'swr'
+import { SWRResponse } from 'swr'
 import { isAddress } from '@ethersproject/address'
 import { EthSWRConfigInterface } from './types'
 import EthSWRConfigContext from './eth-swr-config'
@@ -22,19 +22,19 @@ const getSigner = (config: EthSWRConfigInterface) => {
 
 function useEtherSWR<Data = any, Error = any>(
   key: ethKeyInterface | ethKeysInterface | etherKeyFuncInterface
-): responseInterface<Data, Error>
+): SWRResponse<Data, Error>
 function useEtherSWR<Data = any, Error = any>(
   key: ethKeyInterface | ethKeysInterface | etherKeyFuncInterface,
   config?: EthSWRConfigInterface<Data, Error>
-): responseInterface<Data, Error>
+): SWRResponse<Data, Error>
 function useEtherSWR<Data = any, Error = any>(
   key: ethKeyInterface | ethKeysInterface | etherKeyFuncInterface,
   fetcher?: any, //fetcherFn<Data>,
   config?: EthSWRConfigInterface<Data, Error>
-): responseInterface<Data, Error>
+): SWRResponse<Data, Error>
 function useEtherSWR<Data = any, Error = any>(
-  ...args
-): responseInterface<Data, Error> {
+  ...args: any[]
+): SWRResponse<Data, Error> {
   let _key: ethKeyInterface
   let fn: any //fetcherFn<Data> | undefined
   let config: EthSWRConfigInterface<Data, Error> = { subscribe: [] }
