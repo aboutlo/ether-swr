@@ -7,6 +7,10 @@
   "engines": {
     "node": ">=10"
   },
+  "exports": {
+    "import": "./esm/index.js",
+    "require": "./dist/index.js"
+  },
   "react-native": "./esm/index.js",
   "types": "./dist/index.d.ts",
   "files": [
