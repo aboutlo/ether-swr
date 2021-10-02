@@ -1,23 +1,66 @@
-import { useContext, useEffect } from 'react'
-import useSWR, { cache, mutate } from 'swr'
+import { useContext, useEffect, useRef, useState } from 'react'
+import useSWR, { mutate, useSWRConfig, unstable_serialize } from 'swr'
 import { SWRResponse } from 'swr'
 import { isAddress } from '@ethersproject/address'
 import { EthSWRConfigInterface } from './types'
 import EthSWRConfigContext from './eth-swr-config'
 import { etherJsFetcher } from './ether-js-fetcher'
 import { ABINotFound } from './Errors'
-import { getContract, contracts } from './utils'
+import { getContract } from './utils'
+import { Contract } from '@ethersproject/contracts'
+import { Provider } from '@ethersproject/providers'
 
-export { cache } from 'swr'
 export type etherKeyFuncInterface = () => ethKeyInterface | ethKeysInterface
 export type ethKeyInterface = [string, any?, any?, any?, any?]
 export type ethKeysInterface = string[][]
+
+const usePrevious = (value, initialValue) => {
+  const ref = useRef(initialValue)
+  useEffect(() => {
+    ref.current = value
+  })
+  return ref.current
+}
+
+const useEffectDebugger = (effectHook, dependencies, dependencyNames = []) => {
+  const previousDeps = usePrevious(dependencies, [])
+
+  const changedDeps = dependencies.reduce((accum, dependency, index) => {
+    if (dependency !== previousDeps[index]) {
+      const keyName = dependencyNames[index] || index
+      return {
+        ...accum,
+        [keyName]: {
+          before: previousDeps[index],
+          after: dependency
+        }
+      }
+    }
+
+    return accum
+  }, {})
+
+  if (Object.keys(changedDeps).length) {
+    console.log('[use-effect-debugger] ', changedDeps)
+  }
+
+  useEffect(effectHook, dependencies)
+}
 
 const getSigner = (config: EthSWRConfigInterface) => {
   if (config.signer) {
     return config.signer
   }
-  return config.provider.getSigner()
+  return config.web3Provider.getSigner()
+}
+
+const buildContract = (target: string, config: EthSWRConfigInterface) => {
+  if (!isAddress(target)) return undefined
+  const abi = config.ABIs.get(target)
+  if (!abi) {
+    throw new ABINotFound(`Missing ABI for ${target}`)
+  }
+  return getContract(target, abi, getSigner(config))
 }
 
 function useEtherSWR<Data = any, Error = any>(
@@ -60,59 +103,57 @@ function useEtherSWR<Data = any, Error = any>(
   if (fn === undefined) {
     fn =
       config.fetcher ||
-      etherJsFetcher(config.provider, getSigner(config), config.ABIs)
+      etherJsFetcher(config.web3Provider, getSigner(config), config.ABIs)
   }
 
   // TODO LS implement a getTarget and change subscribe interface {subscribe: {name: "Transfer", target: 0x01}}
   const [target] = isMulticall
     ? [_key[0][0]] // pick the first element of the list.
     : _key
+
   // we need to serialize the key as string otherwise
   // a new array is created everytime the component is rendered
   // we follow SWR format
+  const { cache } = useSWRConfig()
 
-  const serializedKey = isMulticall
-    ? JSON.stringify(_key)
-    : cache.serializeKey(_key)[0]
-  // const joinKey = `arg@"${_key.join('"@"')}"`
-  // const joinKey = `arg@"${JSON.stringify(_key)}"`
+  const normalizeKey = isMulticall ? JSON.stringify(_key) : _key
 
   // base methods (e.g. getBalance, getBlockNumber, etc)
-  // FIXME merge in only one useEffect
   useEffect(() => {
-    if (
-      !config.provider ||
-      !config.subscribe ||
-      isAddress(target) ||
-      Array.isArray(target)
-    ) {
+    if (!config.web3Provider || !config.subscribe || Array.isArray(target)) {
+      // console.log('skip')
       return () => ({})
     }
+    // console.log('effect!')
+    const contract = buildContract(target, config)
 
     const subscribers = Array.isArray(config.subscribe)
       ? config.subscribe
       : [config.subscribe]
 
+    const instance: Contract | Provider = contract || config.web3Provider
+
     subscribers.forEach(subscribe => {
       let filter
-      // const joinKey = isMulticall ? serializedKey : cache.serializeKey(_key)[0]
-      const joinKey = serializedKey
+      const internalKey = unstable_serialize(normalizeKey)
       if (typeof subscribe === 'string') {
         filter = subscribe
         // TODO LS this depends on etherjs
-        config.provider.on(filter, () => {
-          // console.log('on:', { filter }, cache.keys())
-          mutate(joinKey, undefined, true)
+        instance.on(filter, () => {
+          // console.log('on(string):', { filter }, Array.from(cache.keys()))
+          mutate(internalKey, undefined, true)
         })
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
         const { name, on } = subscribe
         filter = name
-        config.provider.on(filter, (...args) => {
+        instance.on(filter, (...args) => {
           if (on) {
-            on(cache.get(joinKey), ...args)
+            // console.log('on(object):', { filter }, Array.from(cache.keys()))
+            on(cache.get(internalKey), ...args)
           } else {
             // auto refresh
-            mutate(joinKey, undefined, true)
+            // console.log('auto(refresh):', { filter }, Array.from(cache.keys()))
+            mutate(internalKey, undefined, true)
           }
         })
       }
@@ -120,77 +161,12 @@ function useEtherSWR<Data = any, Error = any>(
 
     return () => {
       subscribers.forEach(filter => {
-        config.provider.removeAllListeners(filter)
+        instance.removeAllListeners(filter)
       })
     }
-  }, [serializedKey, target])
+  }, [unstable_serialize(normalizeKey), target])
 
-  // contract filter (e.g. balanceOf, approve, etc)
-  // FIXME merge in only one useEffect
-  useEffect(() => {
-    if (
-      !config.provider ||
-      !getSigner(config) ||
-      !config.subscribe ||
-      !isAddress(target)
-    ) {
-      return () => ({})
-    }
-
-    const abi = config.ABIs.get(target)
-    // console.log('useEffect configure', _key)
-    if (!abi) {
-      throw new ABINotFound(`Missing ABI for ${target}`)
-    }
-
-    const contract = getContract(target, abi, getSigner(config))
-
-    const subscribers = Array.isArray(config.subscribe)
-      ? config.subscribe
-      : [config.subscribe]
-
-    subscribers.forEach(subscribe => {
-      let filter
-      // const joinKey = isMulticall ? cache.serializeKey(serializedKey)[0] : _key
-      if (typeof subscribe === 'string') {
-        filter = contract.filters[subscribe]()
-        // console.log('set:', { filter }, cache.keys())
-        contract.on(filter, value => {
-          // auto refresh
-          // console.log('on:', { filter }, cache.keys())
-          mutate(serializedKey, undefined, true)
-        })
-      } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
-        const { name, topics, on } = subscribe
-        const args = topics || []
-        filter = contract.filters[name](...args)
-        // console.log('subscribe:', filter)
-        contract.on(filter, (...args) => {
-          // console.log(`on_${name}:`, args)
-          if (on) {
-            on(cache.get(serializedKey), ...args)
-          } else {
-            // auto refresh
-            mutate(_key, undefined, true)
-          }
-        })
-      }
-    })
-
-    return () => {
-      // console.log('== unmount  ==', target)
-      // console.log('size', contracts.size)
-      subscribers.forEach(filter => {
-        // FIXME the filter need to be unwrap to find the listener as for above
-        contract.removeAllListeners(filter)
-      })
-      contracts.delete(target)
-    }
-    // FIXME revalidate if network change
-  }, [serializedKey, target])
-  // FIXME serialize as string if the key is an array aka multicall
-
-  return useSWR(isMulticall ? serializedKey : _key, fn, config)
+  return useSWR(normalizeKey, fn, config)
 }
 const EthSWRConfig = EthSWRConfigContext.Provider
 const EtherSWRConfig = EthSWRConfigContext.Provider

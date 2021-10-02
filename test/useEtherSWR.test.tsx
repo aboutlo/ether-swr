@@ -1,5 +1,6 @@
 import { cleanup, render, waitFor, act } from '@testing-library/react'
-import useEtherSWR, { EtherSWRConfig, etherJsFetcher, cache } from '../src/'
+import useEtherSWR, { EtherSWRConfig, etherJsFetcher } from '../src/'
+import { useSWRConfig, SWRConfig } from 'swr'
 import ERC20ABI from './ERC20.abi.json'
 import { sleep } from './utils'
 
@@ -9,6 +10,7 @@ import { Contract } from '@ethersproject/contracts'
 
 import EventEmitterMock from './utils'
 import { ABINotFound } from '../src/Errors'
+import { contracts } from '../src/Utils'
 import { BigNumber } from 'ethers'
 import { Web3Provider } from '@ethersproject/providers'
 
@@ -27,11 +29,18 @@ const fetcherMock = mockData => () =>
     }, 100)
   )
 
+export function ResetCacheProvider({ children }) {
+  return (
+    <SWRConfig value={{ dedupingInterval: 0, provider: () => new Map() }}>
+      {children}
+    </SWRConfig>
+  )
+}
+
 describe('useEtherSWR', () => {
   describe('key', () => {
     describe('base', () => {
       beforeEach(() => {
-        cache.clear()
         mockedEthFetcher.mockReset()
       })
       afterEach(cleanup)
@@ -42,13 +51,15 @@ describe('useEtherSWR', () => {
 
         const key: [string] = ['getBalance']
         function Page() {
-          const { data } = useEtherSWR(key, mockedEthFetcher(), {
-            dedupingInterval: 0
-          })
+          const { data } = useEtherSWR(key, mockedEthFetcher())
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Page />)
+        const { container } = render(
+          <ResetCacheProvider>
+            <Page />
+          </ResetCacheProvider>
+        )
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
@@ -64,16 +75,17 @@ describe('useEtherSWR', () => {
         function Page() {
           const { data, isValidating } = useEtherSWR(
             () => ['0x111', 'balanceOf', '0x01'],
-            fetcherMock(mockData),
-            {
-              dedupingInterval: 0
-            }
+            fetcherMock(mockData)
           )
           if (isValidating) return <div>Loading</div>
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Page />)
+        const { container } = render(
+          <ResetCacheProvider>
+            <Page />
+          </ResetCacheProvider>
+        )
         expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
 
         await act(() => sleep(110))
@@ -89,13 +101,15 @@ describe('useEtherSWR', () => {
         mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
 
         function Page() {
-          const { data } = useEtherSWR(['getBalance'], mockedEthFetcher(), {
-            dedupingInterval: 0
-          })
+          const { data } = useEtherSWR(['getBalance'], mockedEthFetcher())
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Page />)
+        const { container } = render(
+          <ResetCacheProvider>
+            <Page />
+          </ResetCacheProvider>
+        )
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
@@ -112,13 +126,16 @@ describe('useEtherSWR', () => {
 
         function Page() {
           const { data } = useEtherSWR(['getBlockByNumber', 'latest'], {
-            fetcher: mockedEthFetcher(),
-            dedupingInterval: 0
+            fetcher: mockedEthFetcher()
           })
           return <div>Block Number, {data}</div>
         }
 
-        const { container } = render(<Page />)
+        const { container } = render(
+          <ResetCacheProvider>
+            <Page />
+          </ResetCacheProvider>
+        )
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
@@ -130,17 +147,24 @@ describe('useEtherSWR', () => {
       it('resolves multiple keys using the config', async () => {
         const mockData = 51
         const mockFetcher = jest.fn().mockReturnValue(mockData)
-        mockedEthFetcher.mockImplementation(jest.fn(() => mockFetcher))
+        mockedEthFetcher.mockImplementation(
+          jest.fn(() => {
+            return mockFetcher
+          })
+        )
 
         function Page() {
           const { data } = useEtherSWR([['getBlockByNumber', 'latest']], {
-            fetcher: mockedEthFetcher(),
-            dedupingInterval: 0
+            fetcher: mockedEthFetcher()
           })
           return <div>Block Number, {data}</div>
         }
 
-        const { container } = render(<Page />)
+        const { container } = render(
+          <ResetCacheProvider>
+            <Page />
+          </ResetCacheProvider>
+        )
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
@@ -195,7 +219,6 @@ describe('useEtherSWR', () => {
 
     describe('contract', () => {
       beforeEach(() => {
-        cache.clear()
         mockedEthFetcher.mockReset()
       })
       afterEach(cleanup)
@@ -218,7 +241,7 @@ describe('useEtherSWR', () => {
             mockedEthFetcher(),
             {
               ABIs: new Map(),
-              provider: library,
+              web3Provider: library,
               subscribe: []
             }
           )
@@ -226,7 +249,11 @@ describe('useEtherSWR', () => {
         }
 
         expect(() => {
-          render(<Page />)
+          render(
+            <ResetCacheProvider>
+              <Page />
+            </ResetCacheProvider>
+          )
         }).toThrowError(
           new ABINotFound(
             'Missing ABI for 0x6b175474e89094c44da98b954eedeac495271d0f'
@@ -247,16 +274,17 @@ describe('useEtherSWR', () => {
         function Page() {
           const { data, isValidating } = useEtherSWR(
             ['0x111', 'balanceOf', '0x01'],
-            loadData,
-            {
-              dedupingInterval: 0
-            }
+            loadData
           )
           if (isValidating) return <div>Loading</div>
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Page />)
+        const { container } = render(
+          <ResetCacheProvider>
+            <Page />
+          </ResetCacheProvider>
+        )
         expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
 
         await act(() => sleep(110))
@@ -301,7 +329,11 @@ describe('useEtherSWR', () => {
           )
         }
 
-        const { container } = render(<Page />)
+        const { container } = render(
+          <ResetCacheProvider>
+            <Page />
+          </ResetCacheProvider>
+        )
         expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
 
         await act(() => sleep(110))
@@ -314,7 +346,8 @@ describe('useEtherSWR', () => {
   describe('subscribe', () => {
     describe('base', () => {
       afterEach(() => {
-        cache.clear()
+        // const { cache } = useSWRConfig()
+        // cache.clear()
         // new EventEmitterMock().removeAllListeners()
       })
       it('listens an event and update data', async () => {
@@ -349,7 +382,8 @@ describe('useEtherSWR', () => {
                 refreshInterval: 0,
                 dedupingInterval: 0,
                 ABIs: new Map(),
-                provider: library, // FIXME is it better?
+                provider: () => new Map(),
+                web3Provider: library, // FIXME is it better?
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -370,9 +404,10 @@ describe('useEtherSWR', () => {
 
         const { container } = render(<Container />)
         expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
-        mockedLibrary.emit('block', 1000)
 
-        await act(() => sleep(110))
+        act(() => {
+          mockedLibrary.emit('block', 1000)
+        })
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
@@ -410,7 +445,7 @@ describe('useEtherSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -431,8 +466,9 @@ describe('useEtherSWR', () => {
         }
 
         const { container } = render(<Container />)
-
-        mockedLibrary.emit('block', 1000)
+        act(() => {
+          mockedLibrary.emit('block', 1000)
+        })
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
@@ -471,7 +507,7 @@ describe('useEtherSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -505,7 +541,9 @@ describe('useEtherSWR', () => {
           )
         )
 
-        mockedLibrary.emit('block', 1000)
+        act(() => {
+          mockedLibrary.emit('block', 1000)
+        })
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
@@ -518,14 +556,19 @@ describe('useEtherSWR', () => {
     })
 
     describe('contract', () => {
+      let contractInstance
+      beforeEach(() => {
+        jest.clearAllMocks()
+        contractInstance = new EventEmitterMock()
+        mockedContract.mockImplementation(() => contractInstance)
+        contracts.clear()
+      })
       afterEach(() => {
-        cache.clear()
         // new EventEmitterMock().removeAllListeners()
       })
       it('listens an event and refresh data', async () => {
         const initialData = 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
-        const contractInstance = new EventEmitterMock()
 
         // Look convolute bu keep in mind the fetcher is a curled function
         mockedEthFetcher.mockImplementation(
@@ -557,9 +600,10 @@ describe('useEtherSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
+                provider: () => new Map(),
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -570,12 +614,14 @@ describe('useEtherSWR', () => {
 
         function Page() {
           const { account } = useWeb3React()
+          // useEtherSWREvents([contractAddr,])
           const { data } = useEtherSWR([contractAddr, 'balanceOf', account], {
             subscribe: 'Transfer'
           })
           return <div>Balance, {data}</div>
         }
 
+        // const contract = mockedContract()
         const { container } = render(<Container />)
 
         await waitFor(() =>
@@ -584,14 +630,16 @@ describe('useEtherSWR', () => {
           )
         )
 
-        const contract = mockedContract()
-        contract.emit('Transfer')
+        act(() => {
+          contractInstance.emit('Transfer')
+        })
 
         await waitFor(() => {
+          expect(contractInstance.listenerCount('Transfer')).toEqual(1)
+
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${initialData + 10}`
           )
-          expect(contract.listenerCount('Transfer')).toEqual(1)
         })
       })
       it('listens an event and refresh multiple data', async () => {
@@ -623,9 +671,10 @@ describe('useEtherSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
+                provider: () => new Map(),
                 fetcher: mockedEthFetcher(library, new Map())
               }}
             >
@@ -651,7 +700,9 @@ describe('useEtherSWR', () => {
         )
 
         const contract = mockedContract()
-        contract.emit('Transfer')
+        act(() => {
+          contract.emit('Transfer')
+        })
 
         await waitFor(() => {
           expect(contract.listenerCount('Transfer')).toEqual(1)
@@ -691,7 +742,7 @@ describe('useEtherSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
@@ -768,7 +819,7 @@ describe('useEtherSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
@@ -847,7 +898,7 @@ describe('useEtherSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
@@ -938,7 +989,7 @@ describe('useEtherSWR', () => {
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                provider: library, // FIXME is it better?
+                web3Provider: library, // FIXME is it better?
                 // it could be because the fetcher can receive all the params at once
                 //
                 fetcher: mockedEthFetcher(library, new Map())
