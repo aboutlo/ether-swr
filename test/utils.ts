@@ -1,4 +1,3 @@
-// make it singleton for testing purpose
 type Listener = { name: string; callback: (args?: any[]) => any }
 
 export class EventEmitterMock {

@@ -34,7 +34,7 @@
     "lint": "eslint \"{src,test,examples}/**/*.{ts,tsx}\"",
     "lint:fix": "eslint \"{src,test,examples}/**/*.{ts,tsx}\" --fix",
     "test": "jest",
-    "test:watch": "jest --watch --verbose"
+    "test:watch": "jest --watch"
   },
   "husky": {
     "hooks": {
@@ -72,7 +72,7 @@
     "react-test-renderer": "^17.0.0",
     "serve": "12.0.0",
     "standard-version": "9.1.0",
-    "swr": "^0.5.6",
+    "swr": "1.0.0",
     "ts-jest": "^26.5.3",
     "typescript": "4.3.5"
   },
