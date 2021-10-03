@@ -1,7 +1,13 @@
 import { act, cleanup, render, waitFor } from '@testing-library/react'
 import useEtherSWR, { etherJsFetcher, EtherSWRConfig } from '../src/'
 import ERC20ABI from './util/ERC20.abi.json'
-import { EventEmitterMock, fetcherMock, sleep, mockFetcher } from './util/utils'
+import {
+  EventEmitterMock,
+  fetcherMock,
+  sleep,
+  mockFetcher,
+  mockMultipleFetch
+} from './util/utils'
 
 import * as React from 'react'
 import { useWeb3React } from '@web3-react/core'
@@ -396,14 +402,10 @@ describe('useEtherSWR', () => {
         const finalData = initialData + 10
         const method = 'getBalance'
 
-        const keyResolver = jest
-          .fn()
-          .mockReturnValueOnce(initialData)
-          .mockReturnValue(finalData)
-
-        // Looks convoluted but the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(jest.fn(() => keyResolver))
-
+        const fetcher = mockMultipleFetch(mockedEthFetcher, [
+          initialData,
+          finalData
+        ])
         const mockedLibrary = new EventEmitterMock()
 
         mockeduseWeb3React.mockReturnValue({
@@ -419,7 +421,8 @@ describe('useEtherSWR', () => {
                 dedupingInterval: 0,
                 ABIs: new Map(),
                 web3Provider: library, // FIXME is it better?
-                fetcher: mockedEthFetcher(library, new Map())
+                fetcher: mockedEthFetcher(library, new Map()),
+                provider: () => new Map()
               }}
             >
               <Page />
@@ -445,26 +448,22 @@ describe('useEtherSWR', () => {
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
-            `Balance, ${initialData + 10}`
+            `Balance, ${finalData}`
           )
-          expect(keyResolver).toHaveBeenNthCalledWith(1, method)
-          expect(keyResolver).toHaveBeenNthCalledWith(2, method)
+          expect(fetcher).toHaveBeenNthCalledWith(1, method)
+          expect(fetcher).toHaveBeenNthCalledWith(2, method)
           expect(mockedLibrary.listenerCount('block')).toEqual(1)
         })
       })
       it('listens a list of events and invoke the callback', async () => {
         const initialData = 10
+        const finalData = initialData + 10
         const callback = jest.fn()
 
-        // Look convolute bu keep in mind the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(
-          jest.fn(() =>
-            jest
-              .fn()
-              .mockReturnValueOnce(initialData)
-              .mockReturnValue(initialData + 10)
-          )
-        )
+        const fetcher = mockMultipleFetch(mockedEthFetcher, [
+          initialData,
+          finalData
+        ])
 
         const mockedLibrary = new EventEmitterMock()
 
@@ -520,9 +519,11 @@ describe('useEtherSWR', () => {
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
-            `Balance, ${initialData + 10}`
+            `Balance, ${finalData}`
           )
           expect(callback).toHaveBeenCalled()
+          expect(fetcher).toHaveBeenNthCalledWith(1, 'getBalance')
+          expect(fetcher).toHaveBeenNthCalledWith(2, 'getBalance')
           expect(mockedLibrary.listenerCount('block')).toEqual(1)
         })
       })
@@ -541,19 +542,16 @@ describe('useEtherSWR', () => {
       })
       it('listens an event and refresh data', async () => {
         const initialData = 10
+        const finalData = initialData + 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
 
-        // Look convolute bu keep in mind the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(
-          jest.fn(() =>
-            jest
-              .fn()
-              .mockReturnValueOnce(initialData)
-              .mockReturnValue(initialData + 10)
-          )
-        )
+        const fetcher = mockMultipleFetch(mockedEthFetcher, [
+          initialData,
+          finalData
+        ])
 
         mockeduseWeb3React.mockReturnValue({
+          account: '0x001',
           active: true,
           library: new EventEmitterMock()
         })
@@ -562,20 +560,12 @@ describe('useEtherSWR', () => {
 
         function Container() {
           const { library } = useWeb3React<Web3Provider>()
-          // As provider you pick a balance by address
-          // library.getBalance('0x111')
-          // As signer you have _address
-          // library.getSigner()._address
-          // As signer you have getBalance without specify the address
-          // library.getSigner().getBalance()
           return (
             <EtherSWRConfig
               value={{
                 dedupingInterval: 0,
                 ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library, // FIXME is it better?
-                // it could be because the fetcher can receive all the params at once
-                //
+                web3Provider: library,
                 provider: () => new Map(),
                 fetcher: mockedEthFetcher(library, new Map())
               }}
@@ -587,14 +577,12 @@ describe('useEtherSWR', () => {
 
         function Page() {
           const { account } = useWeb3React()
-          // useEtherSWREvents([contractAddr,])
           const { data } = useEtherSWR([contractAddr, 'balanceOf', account], {
             subscribe: 'Transfer'
           })
           return <div>Balance, {data}</div>
         }
 
-        // const contract = mockedContract()
         const { container } = render(<Container />)
 
         await waitFor(() =>
@@ -611,26 +599,35 @@ describe('useEtherSWR', () => {
           expect(contractInstance.listenerCount('Transfer')).toEqual(1)
 
           expect(container.firstChild.textContent).toEqual(
-            `Balance, ${initialData + 10}`
+            `Balance, ${finalData}`
+          )
+          expect(fetcher).toHaveBeenNthCalledWith(
+            1,
+            contractAddr,
+            'balanceOf',
+            '0x001'
+          )
+          expect(fetcher).toHaveBeenNthCalledWith(
+            2,
+            contractAddr,
+            'balanceOf',
+            '0x001'
           )
         })
       })
       it('listens an event and refresh multiple data', async () => {
-        const initialData = 10
-        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
         const contractInstance = new EventEmitterMock()
+        const initialData = 10
+        const finalData = initialData + 10
+        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
 
-        // Look convolute bu keep in mind the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(
-          jest.fn(() =>
-            jest
-              .fn()
-              .mockReturnValueOnce(initialData)
-              .mockReturnValue(initialData + 10)
-          )
-        )
+        const fetcher = mockMultipleFetch(mockedEthFetcher, [
+          initialData,
+          finalData
+        ])
 
         mockeduseWeb3React.mockReturnValue({
+          account: '0x001',
           active: true,
           library: new EventEmitterMock()
         })
@@ -682,23 +679,22 @@ describe('useEtherSWR', () => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${initialData + 10}`
           )
+          const key = JSON.stringify([[contractAddr, 'balanceOf', '0x001']])
+          expect(fetcher).toHaveBeenNthCalledWith(1, key)
+          expect(fetcher).toHaveBeenNthCalledWith(2, key)
         })
       })
       it('listens an event with empty topics and refresh data', async () => {
-        const initialData = 10
-        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
         const account = '0x11'
         const contractInstance = new EventEmitterMock()
+        const initialData = 10
+        const finalData = initialData + 10
+        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
 
-        // Look convolute bu keep in mind the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(
-          jest.fn(() =>
-            jest
-              .fn()
-              .mockReturnValueOnce(initialData)
-              .mockReturnValue(initialData + 10)
-          )
-        )
+        const fetcher = mockMultipleFetch(mockedEthFetcher, [
+          initialData,
+          finalData
+        ])
 
         mockeduseWeb3React.mockReturnValue({
           active: true,
@@ -758,24 +754,31 @@ describe('useEtherSWR', () => {
             `Balance, ${initialData + 10}`
           )
           expect(contract.listenerCount('Transfer')).toEqual(1)
+          expect(fetcher).toHaveBeenNthCalledWith(
+            1,
+            contractAddr,
+            'balanceOf',
+            account
+          )
+          expect(fetcher).toHaveBeenNthCalledWith(
+            2,
+            contractAddr,
+            'balanceOf',
+            account
+          )
         })
       })
-
       it('listens an event with topics and refresh data', async () => {
-        const initialData = 10
-        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
         const account = '0x11'
         const contractInstance = new EventEmitterMock()
+        const initialData = 10
+        const finalData = initialData + 10
+        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
 
-        // Look convolute bu keep in mind the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(
-          jest.fn(() =>
-            jest
-              .fn()
-              .mockReturnValueOnce(initialData)
-              .mockReturnValue(initialData + 10)
-          )
-        )
+        const fetcher = mockMultipleFetch(mockedEthFetcher, [
+          initialData,
+          finalData
+        ])
 
         mockeduseWeb3React.mockReturnValue({
           active: true,
@@ -805,17 +808,10 @@ describe('useEtherSWR', () => {
 
         function Page() {
           const { account } = useWeb3React()
-          const { data } = useEtherSWR(
-            [
-              '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf',
-              'balanceOf',
-              account
-            ],
-            {
-              // A filter from anyone to me
-              subscribe: { name: 'Transfer', topics: [null, account] }
-            }
-          )
+          const { data } = useEtherSWR([contractAddr, 'balanceOf', account], {
+            // A filter from anyone to me
+            subscribe: { name: 'Transfer', topics: [null, account] }
+          })
           return <div>Balance, {data}</div>
         }
 
@@ -832,29 +828,36 @@ describe('useEtherSWR', () => {
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
-            `Balance, ${initialData + 10}`
+            `Balance, ${finalData}`
           )
           expect(contract.listenerCount('Transfer')).toEqual(1)
+          expect(fetcher).toHaveBeenNthCalledWith(
+            1,
+            contractAddr,
+            'balanceOf',
+            account
+          )
+          expect(fetcher).toHaveBeenNthCalledWith(
+            2,
+            contractAddr,
+            'balanceOf',
+            account
+          )
         })
       })
-
       it('listens an event with topics and invoke a callback', async () => {
-        const initialData = 10
-        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
+        const account = '0x11'
         const contractInstance = new EventEmitterMock()
-        const account = '0x001'
+        const initialData = 10
+        const finalData = initialData + 10
+        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
         const amount = 50
         const callback = jest.fn()
 
-        // Look convolute bu keep in mind the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(
-          jest.fn(() =>
-            jest
-              .fn()
-              .mockReturnValueOnce(initialData)
-              .mockReturnValueOnce(initialData + 10)
-          )
-        )
+        const fetcher = mockMultipleFetch(mockedEthFetcher, [
+          initialData,
+          finalData
+        ])
 
         mockeduseWeb3React.mockReturnValue({
           active: true,
@@ -885,11 +888,7 @@ describe('useEtherSWR', () => {
         function Page() {
           const { account } = useWeb3React()
           const { data, mutate } = useEtherSWR(
-            [
-              '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf',
-              'balanceOf',
-              account
-            ],
+            [contractAddr, 'balanceOf', account],
             {
               // A filter from anyone to me
               subscribe: {
@@ -918,6 +917,7 @@ describe('useEtherSWR', () => {
         const contract = mockedContract()
         act(() => {
           contract.emit('Transfer', null, account, amount, {})
+          // FIXME split in two act to receive two calls to the fetcher
           contract.emit('Transfer', null, account, amount, {})
         })
 
@@ -926,26 +926,29 @@ describe('useEtherSWR', () => {
             `Balance, ${initialData + amount + amount}`
           )
           expect(contract.listenerCount('Transfer')).toEqual(1)
+          expect(fetcher).toHaveBeenNthCalledWith(
+            1,
+            contractAddr,
+            'balanceOf',
+            account
+          )
+          //FIXME we should receive two calls
+          // expect(fetcher).toHaveBeenNthCalledWith(2, contractAddr, 'balanceOf', account)
         })
       })
-
       it('listens a list of events with topics and invoke all the callbacks', async () => {
-        const initialData = 10
-        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
+        const account = '0x11'
         const contractInstance = new EventEmitterMock()
-        const account = '0x001'
+        const initialData = 10
+        const finalData = initialData + 10
+        const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
         const amount = 50
         const callback = jest.fn()
 
-        // Look convolute bu keep in mind the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(
-          jest.fn(() =>
-            jest
-              .fn()
-              .mockReturnValueOnce(initialData)
-              .mockReturnValueOnce(initialData + 10)
-          )
-        )
+        const fetcher = mockMultipleFetch(mockedEthFetcher, [
+          initialData,
+          finalData
+        ])
 
         mockeduseWeb3React.mockReturnValue({
           active: true,
@@ -1020,6 +1023,12 @@ describe('useEtherSWR', () => {
             `Balance, ${initialData + amount + amount}`
           )
           expect(contract.listenerCount('Transfer')).toEqual(1)
+          expect(fetcher).toHaveBeenNthCalledWith(
+            1,
+            contractAddr,
+            'balanceOf',
+            account
+          )
         })
       })
     })

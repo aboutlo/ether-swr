@@ -66,3 +66,14 @@ export function mockFetcher(fetcher: Mock, data) {
   fetcher.mockImplementation(jest.fn(() => mockFetcher))
   return mockFetcher
 }
+
+/** because a fetcher is a curled function we mock it by creating a mock of the function that execute the fetching **/
+export function mockMultipleFetch(fetcher: Mock, responses: any[]) {
+  const mockFetcher = jest.fn()
+  for (const response of responses) {
+    mockFetcher.mockReturnValueOnce(response)
+  }
+  // const mockFetcher = jest.fn().mockReturnValue(data)
+  fetcher.mockImplementation(jest.fn(() => mockFetcher))
+  return mockFetcher
+}
