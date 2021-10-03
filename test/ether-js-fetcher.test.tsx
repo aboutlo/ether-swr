@@ -2,7 +2,7 @@ import { etherJsFetcher } from '../src'
 import { Wallet } from 'ethers'
 import { BaseProvider, JsonRpcSigner } from '@ethersproject/providers'
 import { Contract } from '@ethersproject/contracts'
-import TestABI from './test.abi.json'
+import TestABI from './util/test.abi.json'
 
 jest.mock('@ethersproject/providers')
 jest.mock('@ethersproject/contracts')

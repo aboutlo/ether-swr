@@ -1,13 +1,13 @@
 import { cleanup, render, waitFor, act } from '@testing-library/react'
 import useEtherSWR, { EthSWRConfig, etherJsFetcher } from '../src/'
-import ERC20ABI from './ERC20.abi.json'
+import ERC20ABI from './util/ERC20.abi.json'
 
 import * as React from 'react'
 import { useWeb3React } from '@web3-react/core'
 import { Contract } from '@ethersproject/contracts'
 
-import EventEmitterMock from './utils'
-import { ResetCacheProvider } from './useEtherSWR.test'
+import EventEmitterMock from './util/utils'
+import { ResetCacheProvider } from './util/components/ResetCacheProvider'
 
 jest.mock('../src/ether-js-fetcher')
 jest.mock('@web3-react/core')

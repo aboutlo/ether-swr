@@ -1,3 +1,5 @@
+import Mock = jest.Mock
+
 type Listener = { name: string; callback: (args?: any[]) => any }
 
 export class EventEmitterMock {
@@ -49,4 +51,18 @@ export default EventEmitterMock
 
 export function sleep(time: number) {
   return new Promise(resolve => setTimeout(resolve, time))
+}
+
+export const fetcherMock = mockData => () =>
+  new Promise(res =>
+    setTimeout(() => {
+      res([mockData])
+    }, 100)
+  )
+
+/** because a fetcher is a curled function we mock it by creating a mock of the function that execute the fetching **/
+export function mockFetcher(fetcher: Mock, data) {
+  const mockFetcher = jest.fn().mockReturnValue(data)
+  fetcher.mockImplementation(jest.fn(() => mockFetcher))
+  return mockFetcher
 }
