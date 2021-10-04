@@ -218,7 +218,7 @@ export const Wallet = () => {
       {active && chainId && (
         <EtherSWRConfig
           value={{
-            provider: library,
+            web3Provider: library,
             ABIs: new Map(ABIs(chainId)),
             refreshInterval: 30000
           }}
