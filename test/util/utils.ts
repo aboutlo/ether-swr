@@ -67,6 +67,22 @@ export function mockFetcher(fetcher: Mock, data) {
   return mockFetcher
 }
 
+export function mockUseWeb3React(
+  mockeduseWeb3React: Mock,
+  {
+    active = true,
+    account = '0x001'
+  }: { active?: boolean; account?: string } = {}
+) {
+  const library = new EventEmitterMock()
+  mockeduseWeb3React.mockReturnValue({
+    active,
+    library,
+    account
+  })
+  return library
+}
+
 /** because a fetcher is a curled function we mock it by creating a mock of the function that execute the fetching **/
 export function mockMultipleFetch(fetcher: Mock, responses: any[]) {
   const mockFetcher = jest.fn()
@@ -76,4 +92,10 @@ export function mockMultipleFetch(fetcher: Mock, responses: any[]) {
   // const mockFetcher = jest.fn().mockReturnValue(data)
   fetcher.mockImplementation(jest.fn(() => mockFetcher))
   return mockFetcher
+}
+
+export function mockContract(mockedContract: Mock) {
+  const contractInstance = new EventEmitterMock()
+  mockedContract.mockImplementation(() => contractInstance)
+  return contractInstance
 }

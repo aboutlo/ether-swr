@@ -6,7 +6,9 @@ import {
   fetcherMock,
   sleep,
   mockFetcher,
-  mockMultipleFetch
+  mockMultipleFetch,
+  mockUseWeb3React,
+  mockContract
 } from './util/utils'
 
 import * as React from 'react'
@@ -16,7 +18,7 @@ import { ABINotFound } from '../src/Errors'
 import { contracts } from '../src/Utils'
 import { BigNumber } from 'ethers'
 import { Web3Provider } from '@ethersproject/providers'
-import { ResetCacheProvider } from './util/components/ResetCacheProvider'
+import { DefaultContainer } from './util/components/DefaultContainer'
 
 jest.mock('../src/ether-js-fetcher')
 jest.mock('@web3-react/core')
@@ -31,6 +33,7 @@ describe('useEtherSWR', () => {
     describe('web3Provider', () => {
       beforeEach(() => {
         mockedEthFetcher.mockReset()
+        mockUseWeb3React(mockeduseWeb3React)
       })
       afterEach(cleanup)
       it('resolves using the fetcher passed', async () => {
@@ -39,14 +42,14 @@ describe('useEtherSWR', () => {
 
         const key: [string] = ['getBalance']
         function Page() {
-          const { data } = useEtherSWR(key, mockedEthFetcher())
+          const { data } = useEtherSWR(key)
           return <div>Balance, {data}</div>
         }
 
         const { container } = render(
-          <ResetCacheProvider>
+          <DefaultContainer fetcher={mockedEthFetcher}>
             <Page />
-          </ResetCacheProvider>
+          </DefaultContainer>
         )
 
         await waitFor(() => {
@@ -71,9 +74,9 @@ describe('useEtherSWR', () => {
         }
 
         const { container } = render(
-          <ResetCacheProvider>
+          <DefaultContainer fetcher={mockedEthFetcher}>
             <Page />
-          </ResetCacheProvider>
+          </DefaultContainer>
         )
         expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
 
@@ -98,9 +101,9 @@ describe('useEtherSWR', () => {
         }
 
         const { container } = render(
-          <ResetCacheProvider>
+          <DefaultContainer fetcher={mockedEthFetcher}>
             <Page />
-          </ResetCacheProvider>
+          </DefaultContainer>
         )
 
         await waitFor(() => {
@@ -123,9 +126,9 @@ describe('useEtherSWR', () => {
         }
 
         const { container } = render(
-          <ResetCacheProvider>
+          <DefaultContainer fetcher={mockedEthFetcher}>
             <Page />
-          </ResetCacheProvider>
+          </DefaultContainer>
         )
 
         await waitFor(() => {
@@ -148,9 +151,9 @@ describe('useEtherSWR', () => {
         }
 
         const { container } = render(
-          <ResetCacheProvider>
+          <DefaultContainer fetcher={mockedEthFetcher}>
             <Page />
-          </ResetCacheProvider>
+          </DefaultContainer>
         )
 
         await waitFor(() => {
@@ -165,36 +168,18 @@ describe('useEtherSWR', () => {
 
       it('resolves using the context with library', async () => {
         const mockData = 11111
-        // Look convolute bu keep in mind the fetcher is a curled function
         const fetcher = mockFetcher(mockedEthFetcher, mockData)
-
-        mockeduseWeb3React.mockReturnValue({
-          active: true,
-          library: new EventEmitterMock()
-        })
-
-        function Container() {
-          const { library } = useWeb3React()
-          return (
-            <EtherSWRConfig
-              value={{
-                dedupingInterval: 0,
-                // ABIs: new Map(),  // FIXME is it better?
-                provider: library, // FIXME is it better?
-                fetcher: mockedEthFetcher(library, new Map())
-              }}
-            >
-              <Page />
-            </EtherSWRConfig>
-          )
-        }
 
         function Page() {
           const { data } = useEtherSWR(['getBalance', 'pending'])
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Container />)
+        const { container } = render(
+          <DefaultContainer fetcher={mockedEthFetcher}>
+            <Page />
+          </DefaultContainer>
+        )
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
@@ -208,22 +193,16 @@ describe('useEtherSWR', () => {
     describe('contract', () => {
       beforeEach(() => {
         mockedEthFetcher.mockReset()
+        mockUseWeb3React(mockeduseWeb3React)
       })
       afterEach(cleanup)
       it('throws ABI Missing', async () => {
         jest.spyOn(console, 'error').mockImplementation()
-        const mockedLibrary = new EventEmitterMock()
-
-        mockeduseWeb3React.mockReturnValue({
-          active: true,
-          library: mockedLibrary
-        })
 
         function Page() {
           const { library } = useWeb3React()
           const { data } = useEtherSWR(
             ['0x6b175474e89094c44da98b954eedeac495271d0f', 'balanceOf', '0x01'],
-            mockedEthFetcher(),
             {
               ABIs: new Map(),
               web3Provider: library,
@@ -235,9 +214,9 @@ describe('useEtherSWR', () => {
 
         expect(() => {
           render(
-            <ResetCacheProvider>
+            <DefaultContainer fetcher={mockedEthFetcher}>
               <Page />
-            </ResetCacheProvider>
+            </DefaultContainer>
           )
         }).toThrowError(
           new ABINotFound(
@@ -259,9 +238,9 @@ describe('useEtherSWR', () => {
         }
 
         const { container } = render(
-          <ResetCacheProvider>
+          <DefaultContainer fetcher={mockedEthFetcher}>
             <Page />
-          </ResetCacheProvider>
+          </DefaultContainer>
         )
         expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
 
@@ -306,9 +285,9 @@ describe('useEtherSWR', () => {
         }
 
         const { container } = render(
-          <ResetCacheProvider>
+          <DefaultContainer fetcher={mockedEthFetcher}>
             <Page />
-          </ResetCacheProvider>
+          </DefaultContainer>
         )
         expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
 
@@ -324,52 +303,20 @@ describe('useEtherSWR', () => {
 
   describe('subscribe', () => {
     describe('base', () => {
-      afterEach(() => {
-        // const { cache } = useSWRConfig()
-        // cache.clear()
-        // new EventEmitterMock().removeAllListeners()
+      let mockedLibrary: EventEmitterMock
+      beforeEach(() => {
+        mockedEthFetcher.mockReset()
+        mockedLibrary = mockUseWeb3React(mockeduseWeb3React)
       })
+      afterEach(cleanup)
       it('listens an event and update data', async () => {
         const initialData = 10
         const finalData = initialData + 10
         const method = 'getBalance'
-        const keyResolver = jest
-          .fn()
-          .mockReturnValueOnce(initialData)
-          .mockReturnValue(finalData)
-
-        // Looks convoluted but the fetcher is a curled function
-        mockedEthFetcher.mockImplementation(
-          jest.fn(args => {
-            // console.log('fetcher', {args})
-            return keyResolver
-          })
-        )
-
-        const mockedLibrary = new EventEmitterMock()
-
-        mockeduseWeb3React.mockReturnValue({
-          active: true,
-          library: mockedLibrary
-        })
-
-        function Container() {
-          const { library } = useWeb3React()
-          return (
-            <EtherSWRConfig
-              value={{
-                refreshInterval: 0,
-                dedupingInterval: 0,
-                ABIs: new Map(),
-                provider: () => new Map(),
-                web3Provider: library, // FIXME is it better?
-                fetcher: mockedEthFetcher(library, new Map())
-              }}
-            >
-              <Page />
-            </EtherSWRConfig>
-          )
-        }
+        const fetcher = mockMultipleFetch(mockedEthFetcher, [
+          initialData,
+          finalData
+        ])
 
         function Page() {
           const { data, isValidating } = useEtherSWR([method], {
@@ -381,7 +328,11 @@ describe('useEtherSWR', () => {
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Container />)
+        const { container } = render(
+          <DefaultContainer fetcher={mockedEthFetcher}>
+            <Page />
+          </DefaultContainer>
+        )
         expect(container.textContent).toMatchInlineSnapshot(`"Loading"`)
 
         act(() => {
@@ -392,8 +343,8 @@ describe('useEtherSWR', () => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${finalData}`
           )
-          expect(keyResolver).toHaveBeenNthCalledWith(1, method)
-          expect(keyResolver).toHaveBeenNthCalledWith(2, method)
+          expect(fetcher).toHaveBeenNthCalledWith(1, method)
+          expect(fetcher).toHaveBeenNthCalledWith(2, method)
           expect(mockedLibrary.listenerCount('block')).toEqual(1)
         })
       })
@@ -406,29 +357,6 @@ describe('useEtherSWR', () => {
           initialData,
           finalData
         ])
-        const mockedLibrary = new EventEmitterMock()
-
-        mockeduseWeb3React.mockReturnValue({
-          active: true,
-          library: mockedLibrary
-        })
-
-        function Container() {
-          const { library } = useWeb3React()
-          return (
-            <EtherSWRConfig
-              value={{
-                dedupingInterval: 0,
-                ABIs: new Map(),
-                web3Provider: library, // FIXME is it better?
-                fetcher: mockedEthFetcher(library, new Map()),
-                provider: () => new Map()
-              }}
-            >
-              <Page />
-            </EtherSWRConfig>
-          )
-        }
 
         function Page() {
           const { data } = useEtherSWR(['getBalance'], {
@@ -441,7 +369,11 @@ describe('useEtherSWR', () => {
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Container />)
+        const { container } = render(
+          <DefaultContainer fetcher={mockedEthFetcher}>
+            <Page />
+          </DefaultContainer>
+        )
         act(() => {
           mockedLibrary.emit('block', 1000)
         })
@@ -465,29 +397,6 @@ describe('useEtherSWR', () => {
           finalData
         ])
 
-        const mockedLibrary = new EventEmitterMock()
-
-        mockeduseWeb3React.mockReturnValue({
-          active: true,
-          library: mockedLibrary
-        })
-
-        function Container() {
-          const { library } = useWeb3React()
-          return (
-            <EtherSWRConfig
-              value={{
-                dedupingInterval: 0,
-                ABIs: new Map(),
-                web3Provider: library, // FIXME is it better?
-                fetcher: mockedEthFetcher(library, new Map())
-              }}
-            >
-              <Page />
-            </EtherSWRConfig>
-          )
-        }
-
         function Page() {
           const { data, mutate } = useEtherSWR(['getBalance'], {
             subscribe: [
@@ -505,7 +414,11 @@ describe('useEtherSWR', () => {
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Container />)
+        const { container } = render(
+          <DefaultContainer fetcher={mockedEthFetcher}>
+            <Page />
+          </DefaultContainer>
+        )
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
@@ -533,8 +446,7 @@ describe('useEtherSWR', () => {
       let contractInstance
       beforeEach(() => {
         jest.clearAllMocks()
-        contractInstance = new EventEmitterMock()
-        mockedContract.mockImplementation(() => contractInstance)
+        contractInstance = mockContract(mockedContract)
         contracts.clear()
       })
       afterEach(() => {
@@ -550,31 +462,6 @@ describe('useEtherSWR', () => {
           finalData
         ])
 
-        mockeduseWeb3React.mockReturnValue({
-          account: '0x001',
-          active: true,
-          library: new EventEmitterMock()
-        })
-
-        mockedContract.mockImplementation(() => contractInstance)
-
-        function Container() {
-          const { library } = useWeb3React<Web3Provider>()
-          return (
-            <EtherSWRConfig
-              value={{
-                dedupingInterval: 0,
-                ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library,
-                provider: () => new Map(),
-                fetcher: mockedEthFetcher(library, new Map())
-              }}
-            >
-              <Page />
-            </EtherSWRConfig>
-          )
-        }
-
         function Page() {
           const { account } = useWeb3React()
           const { data } = useEtherSWR([contractAddr, 'balanceOf', account], {
@@ -583,7 +470,14 @@ describe('useEtherSWR', () => {
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Container />)
+        const { container } = render(
+          <DefaultContainer
+            contractAddr={contractAddr}
+            fetcher={mockedEthFetcher}
+          >
+            <Page />
+          </DefaultContainer>
+        )
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
@@ -626,33 +520,6 @@ describe('useEtherSWR', () => {
           finalData
         ])
 
-        mockeduseWeb3React.mockReturnValue({
-          account: '0x001',
-          active: true,
-          library: new EventEmitterMock()
-        })
-
-        mockedContract.mockImplementation(() => contractInstance)
-
-        function Container() {
-          const { library } = useWeb3React()
-          return (
-            <EtherSWRConfig
-              value={{
-                dedupingInterval: 0,
-                ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library, // FIXME is it better?
-                // it could be because the fetcher can receive all the params at once
-                //
-                provider: () => new Map(),
-                fetcher: mockedEthFetcher(library, new Map())
-              }}
-            >
-              <Page />
-            </EtherSWRConfig>
-          )
-        }
-
         function Page() {
           const { account } = useWeb3React()
           const { data } = useEtherSWR([[contractAddr, 'balanceOf', account]], {
@@ -661,7 +528,14 @@ describe('useEtherSWR', () => {
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Container />)
+        const { container } = render(
+          <DefaultContainer
+            contractAddr={contractAddr}
+            fetcher={mockedEthFetcher}
+          >
+            <Page />
+          </DefaultContainer>
+        )
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
@@ -685,8 +559,7 @@ describe('useEtherSWR', () => {
         })
       })
       it('listens an event with empty topics and refresh data', async () => {
-        const account = '0x11'
-        const contractInstance = new EventEmitterMock()
+        const account = '0x001'
         const initialData = 10
         const finalData = initialData + 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
@@ -695,32 +568,6 @@ describe('useEtherSWR', () => {
           initialData,
           finalData
         ])
-
-        mockeduseWeb3React.mockReturnValue({
-          active: true,
-          library: new EventEmitterMock(),
-          account
-        })
-
-        mockedContract.mockImplementation(() => contractInstance)
-
-        function Container() {
-          const { library, active } = useWeb3React()
-          return (
-            <EtherSWRConfig
-              value={{
-                dedupingInterval: 0,
-                ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library, // FIXME is it better?
-                // it could be because the fetcher can receive all the params at once
-                //
-                fetcher: mockedEthFetcher(library, new Map())
-              }}
-            >
-              <Page />
-            </EtherSWRConfig>
-          )
-        }
 
         function Page() {
           const { account } = useWeb3React()
@@ -738,7 +585,14 @@ describe('useEtherSWR', () => {
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Container />)
+        const { container } = render(
+          <DefaultContainer
+            contractAddr={contractAddr}
+            fetcher={mockedEthFetcher}
+          >
+            <Page />
+          </DefaultContainer>
+        )
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
@@ -769,8 +623,7 @@ describe('useEtherSWR', () => {
         })
       })
       it('listens an event with topics and refresh data', async () => {
-        const account = '0x11'
-        const contractInstance = new EventEmitterMock()
+        const account = '0x001'
         const initialData = 10
         const finalData = initialData + 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
@@ -779,32 +632,6 @@ describe('useEtherSWR', () => {
           initialData,
           finalData
         ])
-
-        mockeduseWeb3React.mockReturnValue({
-          active: true,
-          library: new EventEmitterMock(),
-          account
-        })
-
-        mockedContract.mockImplementation(() => contractInstance)
-
-        function Container() {
-          const { library, active } = useWeb3React()
-          return (
-            <EtherSWRConfig
-              value={{
-                dedupingInterval: 0,
-                ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library, // FIXME is it better?
-                // it could be because the fetcher can receive all the params at once
-                //
-                fetcher: mockedEthFetcher(library, new Map())
-              }}
-            >
-              <Page />
-            </EtherSWRConfig>
-          )
-        }
 
         function Page() {
           const { account } = useWeb3React()
@@ -815,7 +642,14 @@ describe('useEtherSWR', () => {
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Container />)
+        const { container } = render(
+          <DefaultContainer
+            contractAddr={contractAddr}
+            fetcher={mockedEthFetcher}
+          >
+            <Page />
+          </DefaultContainer>
+        )
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
@@ -846,8 +680,7 @@ describe('useEtherSWR', () => {
         })
       })
       it('listens an event with topics and invoke a callback', async () => {
-        const account = '0x11'
-        const contractInstance = new EventEmitterMock()
+        const account = '0x001'
         const initialData = 10
         const finalData = initialData + 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
@@ -858,32 +691,6 @@ describe('useEtherSWR', () => {
           initialData,
           finalData
         ])
-
-        mockeduseWeb3React.mockReturnValue({
-          active: true,
-          library: new EventEmitterMock(),
-          account
-        })
-
-        mockedContract.mockImplementation(() => contractInstance)
-
-        function Container() {
-          const { library, active } = useWeb3React()
-          return (
-            <EtherSWRConfig
-              value={{
-                dedupingInterval: 0,
-                ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library, // FIXME is it better?
-                // it could be because the fetcher can receive all the params at once
-                //
-                fetcher: mockedEthFetcher(library, new Map())
-              }}
-            >
-              <Page />
-            </EtherSWRConfig>
-          )
-        }
 
         function Page() {
           const { account } = useWeb3React()
@@ -906,7 +713,14 @@ describe('useEtherSWR', () => {
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Container />)
+        const { container } = render(
+          <DefaultContainer
+            contractAddr={contractAddr}
+            fetcher={mockedEthFetcher}
+          >
+            <Page />
+          </DefaultContainer>
+        )
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
@@ -937,8 +751,7 @@ describe('useEtherSWR', () => {
         })
       })
       it('listens a list of events with topics and invoke all the callbacks', async () => {
-        const account = '0x11'
-        const contractInstance = new EventEmitterMock()
+        const account = '0x001'
         const initialData = 10
         const finalData = initialData + 10
         const contractAddr = '0x6126A4C0Eb7822C12Bea32327f1706F035b414bf'
@@ -949,32 +762,6 @@ describe('useEtherSWR', () => {
           initialData,
           finalData
         ])
-
-        mockeduseWeb3React.mockReturnValue({
-          active: true,
-          library: new EventEmitterMock(),
-          account
-        })
-
-        mockedContract.mockImplementation(() => contractInstance)
-
-        function Container() {
-          const { library, active } = useWeb3React()
-          return (
-            <EtherSWRConfig
-              value={{
-                dedupingInterval: 0,
-                ABIs: new Map(Object.entries({ [contractAddr]: ERC20ABI })),
-                web3Provider: library, // FIXME is it better?
-                // it could be because the fetcher can receive all the params at once
-                //
-                fetcher: mockedEthFetcher(library, new Map())
-              }}
-            >
-              <Page />
-            </EtherSWRConfig>
-          )
-        }
 
         function Page() {
           const { account } = useWeb3React()
@@ -1004,7 +791,14 @@ describe('useEtherSWR', () => {
           return <div>Balance, {data}</div>
         }
 
-        const { container } = render(<Container />)
+        const { container } = render(
+          <DefaultContainer
+            contractAddr={contractAddr}
+            fetcher={mockedEthFetcher}
+          >
+            <Page />
+          </DefaultContainer>
+        )
 
         await waitFor(() =>
           expect(container.firstChild.textContent).toEqual(
@@ -1012,17 +806,16 @@ describe('useEtherSWR', () => {
           )
         )
 
-        const contract = mockedContract()
         act(() => {
-          contract.emit('Transfer', null, account, amount, {})
-          contract.emit('Transfer', null, account, amount, {})
+          contractInstance.emit('Transfer', null, account, amount, {})
+          contractInstance.emit('Transfer', null, account, amount, {})
         })
 
         await waitFor(() => {
           expect(container.firstChild.textContent).toEqual(
             `Balance, ${initialData + amount + amount}`
           )
-          expect(contract.listenerCount('Transfer')).toEqual(1)
+          expect(contractInstance.listenerCount('Transfer')).toEqual(1)
           expect(fetcher).toHaveBeenNthCalledWith(
             1,
             contractAddr,
