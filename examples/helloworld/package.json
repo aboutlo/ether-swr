@@ -1,6 +1,6 @@
 {
   "name": "helloworld",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "dependencies": {
     "@ethersproject/address": "^5.0.2",
@@ -9,11 +9,11 @@
     "@ethersproject/units": "^5.0.2",
     "@web3-react/core": "^6.0.9",
     "@web3-react/injected-connector": "^6.0.7",
-    "ether-swr": "0.6.1",
+    "ether-swr": "^1.0.0",
     "ethers": "^5.0.6",
     "react": "^17.0.0",
     "react-dom": "^17.0.0",
-    "swr": "^0.5.4"
+    "swr": "^1.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
