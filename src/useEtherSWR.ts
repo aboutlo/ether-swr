@@ -12,40 +12,7 @@ import { Provider } from '@ethersproject/providers'
 
 export type etherKeyFuncInterface = () => ethKeyInterface | ethKeysInterface
 export type ethKeyInterface = [string, any?, any?, any?, any?]
-export type ethKeysInterface = string[][]
-
-const usePrevious = (value, initialValue) => {
-  const ref = useRef(initialValue)
-  useEffect(() => {
-    ref.current = value
-  })
-  return ref.current
-}
-
-const useEffectDebugger = (effectHook, dependencies, dependencyNames = []) => {
-  const previousDeps = usePrevious(dependencies, [])
-
-  const changedDeps = dependencies.reduce((accum, dependency, index) => {
-    if (dependency !== previousDeps[index]) {
-      const keyName = dependencyNames[index] || index
-      return {
-        ...accum,
-        [keyName]: {
-          before: previousDeps[index],
-          after: dependency
-        }
-      }
-    }
-
-    return accum
-  }, {})
-
-  if (Object.keys(changedDeps).length) {
-    console.log('[use-effect-debugger] ', changedDeps)
-  }
-
-  useEffect(effectHook, dependencies)
-}
+export type ethKeysInterface = any[][]
 
 const getSigner = (config: EthSWRConfigInterface) => {
   if (config.signer) {
@@ -111,11 +78,10 @@ function useEtherSWR<Data = any, Error = any>(
     ? [_key[0][0]] // pick the first element of the list.
     : _key
 
+  const { cache } = useSWRConfig()
   // we need to serialize the key as string otherwise
   // a new array is created everytime the component is rendered
   // we follow SWR format
-  const { cache } = useSWRConfig()
-
   const normalizeKey = isMulticall ? JSON.stringify(_key) : _key
 
   // base methods (e.g. getBalance, getBlockNumber, etc)

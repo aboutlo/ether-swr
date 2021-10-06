@@ -1,4 +1,5 @@
 import Mock = jest.Mock
+import { useEffect, useRef } from 'react'
 
 type Listener = { name: string; callback: (args?: any[]) => any }
 
@@ -98,4 +99,37 @@ export function mockContract(mockedContract: Mock) {
   const contractInstance = new EventEmitterMock()
   mockedContract.mockImplementation(() => contractInstance)
   return contractInstance
+}
+
+const usePrevious = (value, initialValue) => {
+  const ref = useRef(initialValue)
+  useEffect(() => {
+    ref.current = value
+  })
+  return ref.current
+}
+
+const useEffectDebugger = (effectHook, dependencies, dependencyNames = []) => {
+  const previousDeps = usePrevious(dependencies, [])
+
+  const changedDeps = dependencies.reduce((accum, dependency, index) => {
+    if (dependency !== previousDeps[index]) {
+      const keyName = dependencyNames[index] || index
+      return {
+        ...accum,
+        [keyName]: {
+          before: previousDeps[index],
+          after: dependency
+        }
+      }
+    }
+
+    return accum
+  }, {})
+
+  if (Object.keys(changedDeps).length) {
+    console.log('[use-effect-debugger] ', changedDeps)
+  }
+
+  useEffect(effectHook, dependencies)
 }

@@ -2,6 +2,7 @@ node_modules
 dist
 esm
 demo
+.yalc
 *.log
 *.tgz
 .env
@@ -11,3 +12,4 @@ demo
 examples/**/yarn.lock
 package-lock.json
 yarn.lock
+yalc.lock
