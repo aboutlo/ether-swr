@@ -1,9 +1,7 @@
 import { act, cleanup, render, waitFor } from '@testing-library/react'
 import useEtherSWR, { etherJsFetcher, EtherSWRConfig } from '../src/'
-import ERC20ABI from './util/ERC20.abi.json'
 import {
   EventEmitterMock,
-  fetcherMock,
   sleep,
   mockFetcher,
   mockMultipleFetch,
@@ -15,7 +13,7 @@ import * as React from 'react'
 import { useWeb3React } from '@web3-react/core'
 import { Contract } from '@ethersproject/contracts'
 import { ABINotFound } from '../src/Errors'
-import { contracts } from '../src/Utils'
+import { contracts } from '../src/utils'
 import { BigNumber } from 'ethers'
 import { Web3Provider } from '@ethersproject/providers'
 import { DefaultContainer } from './util/components/DefaultContainer'
