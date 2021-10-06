@@ -11,6 +11,7 @@ import { Zero } from '@ethersproject/constants'
 import { formatEther, formatUnits } from '@ethersproject/units'
 import useEtherSWR, { EtherSWRConfig } from 'ether-swr'
 import ERC20ABI from './ERC20.abi.json'
+import { useBalanceOf } from 'ether-swr'
 
 export const Networks = {
   MainNet: 1,
@@ -42,6 +43,18 @@ export const TOKENS_BY_NETWORK: {
       name: 'Dai Stablecoin',
       symbol: 'DAI',
       decimals: 18
+    },
+    {
+      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      name: 'Wrapped Ether',
+      symbol: 'WETH',
+      decimals: 18
+    },
+    {
+      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      name: 'USD Coin',
+      symbol: 'USDC',
+      decimals: 6
     }
   ],
   [Networks.Rinkeby]: [
@@ -179,9 +192,11 @@ export const TokenBalance = ({
 export const TokenList = ({ chainId }: { chainId: number }) => {
   const { account } = useWeb3React<Web3Provider>()
   const tokens = TOKENS_BY_NETWORK[chainId]
+
   // Multiple calls example
-  const { data: balances } = useEtherSWR<BigNumber[]>(
-    tokens.map(t => [t.address, 'balanceOf', account!])
+  const { data: balances } = useBalanceOf<BigNumber[]>(
+    tokens.map(t => t.address),
+    account!
   )
   return (
     <>
