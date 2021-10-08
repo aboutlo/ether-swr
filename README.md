@@ -1,6 +1,10 @@
 # Ether-SWR
 
-Ether-SWR is a React hook that fetches Ethereum data, streamlines the chores to keep the internal state of Decentralized App (DApp) and optimize the RPC calls to an Ethereum node. 
+<div align="center">
+  <img src="logo.png" width="450" height="auto"/>
+</div>
+
+Ether-SWR is a React hook that fetches Ethereum data, streamlines the chores to keep the internal state of Decentralized App (DApp) and optimize the RPC calls to an Ethereum node.
 It does so with a declarative approach via an opinionated wrapper of [SWR](https://swr.vercel.app/).
 
 Ether-SWR follows the `stale-while-revalidate` (HTTP RFC 5861) concept: first it returns the data from cache (stale), then send the fetch request on chain, and finally come with the up-to-date data.
@@ -219,6 +223,44 @@ export const Wallet = () => {
 ## Example
 
 A minimal example with an event is available [here](./examples)
+
+## Utilities
+
+### useBalanceOf
+
+It retrieves balances for an ERC20 token.
+You can either pass one or multiple contracts and one or multiple owners
+
+```typescript
+import { useBalanceOf } from 'ether-swr'
+
+const { account } = useWeb3React<Web3Provider>()
+const { data: balances } = useBalanceOf<BigNumber[]>(
+  [
+    '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+  ],
+  account
+)
+```
+
+### useBalance
+
+It retrieves Ether balance.
+You can either pass one or multiple owners
+
+```typescript
+import { useBalance } from 'ether-swr'
+
+const { account } = useWeb3React<Web3Provider>()
+const { data: balances } = useBalance<BigNumber>(
+  [
+    '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+  ],
+  account
+)
+```
 
 ## Related projects
 
