@@ -9,9 +9,8 @@ import { InjectedConnector } from '@web3-react/injected-connector'
 import { BigNumber } from 'ethers'
 import { Zero } from '@ethersproject/constants'
 import { formatEther, formatUnits } from '@ethersproject/units'
-import useEtherSWR, { EtherSWRConfig } from 'ether-swr'
+import useEtherSWR, { EtherSWRConfig, useBalanceOf } from 'ether-swr'
 import ERC20ABI from './ERC20.abi.json'
-import { useBalanceOf } from 'ether-swr'
 
 export const Networks = {
   MainNet: 1,
