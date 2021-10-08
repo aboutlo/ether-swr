@@ -1,5 +1,5 @@
 import { act, cleanup, render, waitFor } from '@testing-library/react'
-import useEtherSWR, { etherJsFetcher, EtherSWRConfig } from '../src/'
+import useEtherSWR, { etherJsFetcher } from '../src/'
 import {
   EventEmitterMock,
   sleep,
@@ -15,7 +15,6 @@ import { Contract } from '@ethersproject/contracts'
 import { ABINotFound } from '../src/Errors'
 import { contracts } from '../src/utils'
 import { BigNumber } from 'ethers'
-import { Web3Provider } from '@ethersproject/providers'
 import { DefaultContainer } from './util/components/DefaultContainer'
 
 jest.mock('../src/ether-js-fetcher')
