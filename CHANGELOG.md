@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/aboutlo/ether-swr/compare/v0.6.4...v1.0.0) (2021-10-08)
+
+
+### Features
+
+* add useBalance useBalanceOf ([0f55b47](https://github.com/aboutlo/ether-swr/commit/0f55b47ac87670ffb17b4068a2a8f914c66fe6e2))
+* upgrade to the lastest ether-swr ([97e8707](https://github.com/aboutlo/ether-swr/commit/97e8707a79a4d6326378efc0e6bd376dca274f38))
+
 ### [0.6.4](https://github.com/aboutlo/ether-swr/compare/v0.6.3...v0.6.4) (2021-07-14)
 
 
