@@ -82,5 +82,8 @@
     "react": "*",
     "react-dom": "*",
     "swr": "*"
+  },
+  "dependencies": {
+    "ethcall": "4.1.3"
   }
 }
