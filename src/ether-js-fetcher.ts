@@ -1,13 +1,9 @@
-import { Wallet } from 'ethers'
 import { Provider as EthCallProvider } from 'ethcall'
-import { JsonRpcSigner, Provider, Web3Provider } from '@ethersproject/providers'
+import { Provider, Web3Provider } from '@ethersproject/providers'
 import { call, multiCall } from './utils'
 
 export const etherJsFetcher = (
   provider: Provider | Web3Provider,
-  // Wallet from EtherJS
-  // JsonRpcSigner from useWeb3React
-  signer: Wallet | JsonRpcSigner, // FIXME drop it signer can use outside to
   ABIs?: Map<string, any>
 ) => {
   //TODO LS what happens when the network id change?

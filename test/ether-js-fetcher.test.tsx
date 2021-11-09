@@ -62,14 +62,14 @@ describe('ethFetcher', () => {
 
   it('return a fetcher', () => {
     const provider = buildProviderMock()
-    expect(etherJsFetcher(provider, signer)).toBeDefined()
+    expect(etherJsFetcher(provider)).toBeDefined()
   })
 
   describe('eth', () => {
     it('return the balance of the signer', async () => {
       const balance = 1
       const provider = buildProviderMock(balance)
-      const fetcher = etherJsFetcher(provider, signer)
+      const fetcher = etherJsFetcher(provider)
       // SWR spreads the array when it invoke the fetcher
       await expect(fetcher(...['getBalance'])).resolves.toEqual(balance)
     })
@@ -91,7 +91,7 @@ describe('ethFetcher', () => {
       })
 
       const provider = buildProviderMock(balance)
-      const fetcher = etherJsFetcher(provider, signer)
+      const fetcher = etherJsFetcher(provider)
       // SWR spreads the array when it invoke the fetcher
       await expect(
         fetcher(JSON.stringify([['getBalance', signer.address]]))
@@ -100,7 +100,7 @@ describe('ethFetcher', () => {
     it('return the getTransactionCount', async () => {
       const transactionCount = 3
       const provider = buildProviderMock(undefined, transactionCount)
-      const fetcher = etherJsFetcher(provider, signer)
+      const fetcher = etherJsFetcher(provider)
       const key = ['getTransactionCount']
       // SWR spreads the array when it invoke the fetcher
       await expect(fetcher(...key)).resolves.toEqual(transactionCount)
@@ -127,7 +127,7 @@ describe('ethFetcher', () => {
       const contract = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
       const account = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
       const ABIs = new Map([[contract, TestABI]])
-      const fetcher = etherJsFetcher(provider, signer, ABIs)
+      const fetcher = etherJsFetcher(provider, ABIs)
       // SWR spreads the array when it invoke the fetcher
       await expect(
         fetcher(...[contract, 'balanceOf', account])
@@ -149,7 +149,7 @@ describe('ethFetcher', () => {
       const contract = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
       const account = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
       const ABIs = new Map([[contract, TestABI]])
-      const fetcher = etherJsFetcher(provider, signer, ABIs)
+      const fetcher = etherJsFetcher(provider, ABIs)
       // SWR spreads the array when it invoke the fetcher
       await expect(
         fetcher(JSON.stringify([[contract, 'balanceOf', account]]))
