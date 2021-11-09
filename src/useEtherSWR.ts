@@ -14,20 +14,13 @@ export type etherKeyFuncInterface = () => ethKeyInterface | ethKeysInterface
 export type ethKeyInterface = [string, any?, any?, any?, any?]
 export type ethKeysInterface = any[][]
 
-const getSigner = (config: EthSWRConfigInterface) => {
-  if (config.signer) {
-    return config.signer
-  }
-  return config.web3Provider.getSigner()
-}
-
 const buildContract = (target: string, config: EthSWRConfigInterface) => {
   if (!isAddress(target)) return undefined
   const abi = config.ABIs.get(target)
   if (!abi) {
     throw new ABINotFound(`Missing ABI for ${target}`)
   }
-  return getContract(target, abi, getSigner(config))
+  return getContract(target, abi)
 }
 
 function useEtherSWR<Data = any, Error = any>(

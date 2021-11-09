@@ -9,16 +9,12 @@ import {
 } from 'ethcall'
 
 export const contracts = new Map<string, Contract>()
-export function getContract(
-  address: string,
-  abi: ContractInterface,
-  signer: any
-): Contract {
+export function getContract(address: string, abi: ContractInterface): Contract {
   let contract = contracts.get(address)
   if (contract) {
     return contract
   }
-  contract = new Contract(address, abi, signer)
+  contract = new Contract(address, abi)
   contracts.set(address, contract)
   return contract
 }
