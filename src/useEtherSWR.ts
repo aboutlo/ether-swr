@@ -68,9 +68,7 @@ function useEtherSWR<Data = any, Error = any>(
   config = Object.assign({}, useContext(EthSWRConfigContext), config)
 
   if (fn === undefined) {
-    fn =
-      config.fetcher ||
-      etherJsFetcher(config.web3Provider, getSigner(config), config.ABIs)
+    fn = config.fetcher || etherJsFetcher(config.web3Provider, config.ABIs)
   }
 
   // TODO LS implement a getTarget and change subscribe interface {subscribe: {name: "Transfer", target: 0x01}}
