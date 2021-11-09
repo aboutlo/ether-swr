@@ -1,17 +1,23 @@
 import { etherJsFetcher } from '../src'
-import { Wallet } from 'ethers'
+import { BigNumber, Wallet } from 'ethers'
 import { BaseProvider, JsonRpcSigner } from '@ethersproject/providers'
 import { Contract } from '@ethersproject/contracts'
 import TestABI from './util/test.abi.json'
+import {
+  Provider as EthCallProvider,
+  Call,
+  Contract as EthCallContract
+} from 'ethcall'
 
 jest.mock('@ethersproject/providers')
 jest.mock('@ethersproject/contracts')
-// jest.mock('ethers')
+jest.mock('ethcall')
 
 const ProviderMock = BaseProvider as jest.Mocked<typeof BaseProvider>
+const ethCallProviderMock = EthCallProvider as jest.Mock<EthCallProvider>
 const ContractMock = Contract as jest.Mocked<any>
+const ethContractMock = EthCallContract as jest.Mock<EthCallContract>
 const SignerMock = JsonRpcSigner as jest.Mocked<typeof JsonRpcSigner>
-// const WalletMock = Wallet as jest.Mocked<typeof Wallet>
 
 const buildProviderMock = (balance = 1, transactionCount = 1) => {
   // const jsonRpcFetchFunc = jest.fn()
@@ -67,14 +73,29 @@ describe('ethFetcher', () => {
       // SWR spreads the array when it invoke the fetcher
       await expect(fetcher(...['getBalance'])).resolves.toEqual(balance)
     })
-    it('returns the balances of the signer', async () => {
+    it('returns multiple balances', async () => {
       const balance = 1
+      ethCallProviderMock.mockReturnValueOnce({
+        init: (provider: BaseProvider) => Promise.resolve(),
+        getEthBalance: (address: string) => ({
+          contract: {
+            address: ''
+          },
+          name: '',
+          inputs: [],
+          outputs: [],
+          params: []
+        }),
+        all: (call: any) => Promise.resolve([1]),
+        tryAll: (calls: Call[], block?: number) => Promise.resolve([])
+      })
+
       const provider = buildProviderMock(balance)
       const fetcher = etherJsFetcher(provider, signer)
       // SWR spreads the array when it invoke the fetcher
-      await expect(fetcher(JSON.stringify([['getBalance']]))).resolves.toEqual([
-        balance
-      ])
+      await expect(
+        fetcher(JSON.stringify([['getBalance', signer.address]]))
+      ).resolves.toEqual([balance])
     })
     it('return the getTransactionCount', async () => {
       const transactionCount = 3
@@ -114,8 +135,15 @@ describe('ethFetcher', () => {
     })
     it('return multiple values', async () => {
       const balance = 10
+      ethCallProviderMock.mockReturnValueOnce({
+        init: (provider: BaseProvider) => Promise.resolve(),
+        getEthBalance: (address: string) => null,
+        all: (call: any) => Promise.resolve([balance]),
+        tryAll: (calls: Call[], block?: number) => Promise.resolve([balance])
+      })
+
       // workaround create a dynamic method
-      ContractMock.prototype.balanceOf = jest
+      ethContractMock.prototype.balanceOf = jest
         .fn()
         .mockImplementation(() => Promise.resolve(balance))
       const contract = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
