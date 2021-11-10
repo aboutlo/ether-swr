@@ -26,7 +26,6 @@ export const etherJsFetcher = (
       const multi: { calls: Call[]; block } = parsed.reduce(
         (memo, key) => {
           const [call, block] = multiCall(key, ethCallProvider, ABIs)
-          console.log({ call, block })
           if (memo.block && block !== memo.block) {
             throw new Error(
               `${key} has block ${block} instead of ${memo.block}`
@@ -40,7 +39,6 @@ export const etherJsFetcher = (
         },
         { calls: [], block: undefined }
       )
-      console.log({ multi })
       return ethCallProvider.all(multi.calls, multi.block)
     }
     return call(args, provider, ABIs)

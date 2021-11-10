@@ -18,6 +18,16 @@ const parseExtended = (params: any[]) => {
     : { blockTag: undefined }
   return extended
 }
+
+const parseParams = params => {
+  const [address, method, ...otherParams] = params
+  const extended = parseExtended(otherParams)
+  if (Object.values(extended).filter(Boolean).length > 0) {
+    // discard the last item because it was an extend object
+    otherParams.pop()
+  }
+  return { params: [address, method, otherParams], extended }
+}
 export const contracts = new Map<string, Contract>()
 export function getContract(address: string, abi: ContractInterface): Contract {
   let contract = contracts.get(address)
@@ -53,15 +63,11 @@ export const multiCall = (
   provider: EthCallProvider,
   ABIs
 ): [Call, number?] => {
-  // TODO LS move to [address, method, params, extended] = parseParameters(parameters)
-  const [address, method, ...otherParams] = parameters
-  const extended = parseExtended(otherParams)
-  if (Object.values(extended).filter(Boolean).length > 0) {
-    // discard the last item because it was an extend object
-    otherParams.pop()
-  }
+  const {
+    params: [address, method, otherParams],
+    extended
+  } = parseParams(parameters)
 
-  console.log({ address, method, otherParams, extended })
   // it's a contract
   if (isAddress(address)) {
     if (!ABIs) throw new ABIError(`ABI repo not found`)
