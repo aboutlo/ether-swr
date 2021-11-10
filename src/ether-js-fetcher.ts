@@ -1,4 +1,4 @@
-import { Provider as EthCallProvider } from 'ethcall'
+import { Provider as EthCallProvider, Call } from 'ethcall'
 import { Provider, Web3Provider } from '@ethersproject/providers'
 import { call, multiCall } from './utils'
 
@@ -10,7 +10,7 @@ export const etherJsFetcher = (
   const ethCallProvider = new EthCallProvider()
 
   return async (...args: any[]) => {
-    let parsed
+    let parsed: any[]
     try {
       parsed = JSON.parse(args[0])
     } catch (e) {
@@ -18,14 +18,30 @@ export const etherJsFetcher = (
     }
     const [arg1] = parsed || args
 
+    // it's a batch call
     if (Array.isArray(arg1)) {
-      // it's a batch call
-      // can we skip this for every call?
+      // TODO LS can we skip this for every call?
+      // yes, perhaps in the future https://github.com/Destiner/ethcall/issues/17
       await ethCallProvider.init(provider as any)
-      const calls: string[][] = parsed
-      return ethCallProvider.all(
-        calls.map(call => multiCall(call, ethCallProvider, ABIs))
+      const multi: { calls: Call[]; block } = parsed.reduce(
+        (memo, key) => {
+          const [call, block] = multiCall(key, ethCallProvider, ABIs)
+          console.log({ call, block })
+          if (memo.block && block !== memo.block) {
+            throw new Error(
+              `${key} has block ${block} instead of ${memo.block}`
+            )
+          }
+          memo.calls.push(call)
+          return {
+            calls: memo.calls,
+            block
+          }
+        },
+        { calls: [], block: undefined }
       )
+      console.log({ multi })
+      return ethCallProvider.all(multi.calls, multi.block)
     }
     return call(args, provider, ABIs)
   }

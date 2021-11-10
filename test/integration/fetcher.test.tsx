@@ -55,6 +55,21 @@ describe('ethFetcher', () => {
       ).resolves.toEqual(balance)
     })
 
+    it('return the value from a specific block', async () => {
+      const balance = BigNumber.from(0)
+
+      const contract = '0x6b175474e89094c44da98b954eedeac495271d0f'
+      // const account = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
+      const ABIs = new Map([[contract, ERC20ABI]])
+      const fetcher = etherJsFetcher(provider, ABIs)
+      // SWR spreads the array when it invoke the fetcher
+      await expect(
+        fetcher(
+          ...[contract, 'balanceOf', signer.address, { blockTag: 13589470 }]
+        )
+      ).resolves.toEqual(balance)
+    })
+
     it('return multiple values', async () => {
       const balance = BigNumber.from(0)
       const contract = '0x6b175474e89094c44da98b954eedeac495271d0f'
@@ -63,6 +78,21 @@ describe('ethFetcher', () => {
       // SWR spreads the array when it invoke the fetcher
       await expect(
         fetcher(JSON.stringify([[contract, 'balanceOf', signer.address]]))
+      ).resolves.toEqual([balance])
+    })
+
+    it('return multiple values from a specific block', async () => {
+      const balance = BigNumber.from(0)
+      const contract = '0x6b175474e89094c44da98b954eedeac495271d0f'
+      const ABIs = new Map([[contract, ERC20ABI]])
+      const fetcher = etherJsFetcher(provider, ABIs)
+      // SWR spreads the array when it invoke the fetcher
+      await expect(
+        fetcher(
+          JSON.stringify([
+            [contract, 'balanceOf', signer.address, { blockTag: 13589470 }]
+          ])
+        )
       ).resolves.toEqual([balance])
     })
   })
