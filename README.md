@@ -14,7 +14,13 @@ In case the same request is defined multiple times on the same rendered componen
 [![view on npm](https://img.shields.io/npm/v/ether-swr.svg)](https://www.npmjs.org/package/ether-swr)
 [![](https://github.com/aboutlo/ether-swr/workflows/ci/badge.svg)](https://github.com/aboutlo/ether-swr/actions?query=workflow%3Aci)
 
+## Installation
+
     yarn add ether-swr
+
+or
+
+    npm install --save ether-swr
 
 ## API
 
