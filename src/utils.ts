@@ -1,12 +1,8 @@
-import { Contract, ContractInterface } from 'ethers'
-import { Provider, Web3Provider } from '@ethersproject/providers'
+import { ContractInterface, providers as ethersProviders } from 'ethers'
+import { Contract } from '@ethersproject/contracts'
 import { isAddress } from '@ethersproject/address'
 import { ABIError, ABINotFound } from './Errors'
-import {
-  Call,
-  Contract as EthCallContract,
-  Provider as EthCallProvider
-} from 'ethcall'
+import { providers } from '@0xsequence/multicall'
 
 const isObject = obj => {
   return typeof obj === 'object' && !Array.isArray(obj) && obj !== null
@@ -41,7 +37,7 @@ export function getContract(address: string, abi: ContractInterface): Contract {
 
 export const call = (
   parameters: string[],
-  provider: Provider | Web3Provider,
+  provider: ethersProviders.Provider,
   ABIs
 ): Promise<any> => {
   const [address, method, ...otherParams] = parameters
@@ -60,9 +56,9 @@ export const call = (
 }
 export const multiCall = (
   parameters: string | any[],
-  provider: EthCallProvider,
+  provider: providers.MulticallProvider,
   ABIs
-): [Call, number?] => {
+) => {
   const {
     params: [address, method, otherParams],
     extended
@@ -74,10 +70,10 @@ export const multiCall = (
     if (!ABIs.get) throw new ABIError(`ABI repo isn't a Map`)
     const abi = ABIs.get(address)
     if (!abi) throw new ABINotFound(`ABI not found for ${address}`)
-    const contract = new EthCallContract(address, abi)
-    return [contract[method](...otherParams), extended.blockTag]
+    const contract = new Contract(address, abi, provider)
+    return contract[method](...otherParams, extended)
   }
   const param2 = method
-  const baseMethod = address === 'getBalance' ? 'getEthBalance' : address // getBalance, getTransactionCount, etc
-  return [provider[baseMethod](param2, ...otherParams), extended.blockTag]
+  const baseMethod = address
+  return provider[baseMethod](param2, ...otherParams, extended.blockTag)
 }
