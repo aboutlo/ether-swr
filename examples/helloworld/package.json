@@ -9,7 +9,7 @@
     "@ethersproject/units": "^5.0.2",
     "@web3-react/core": "^6.0.9",
     "@web3-react/injected-connector": "^6.0.7",
-    "ether-swr": "^1.0.0",
+    "ether-swr": "^2.0.0",
     "ethers": "^5.0.6",
     "react": "^17.0.0",
     "react-dom": "^17.0.0",

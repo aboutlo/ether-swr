@@ -1,11 +1,23 @@
 import { etherJsFetcher } from '../../src'
-import { BigNumber, getDefaultProvider, Wallet } from 'ethers'
-import { Provider } from '@ethersproject/providers'
+import { BigNumber, getDefaultProvider, Wallet, providers } from 'ethers'
 import ERC20ABI from '../util/ERC20.abi.json'
+
+const DAI_CONTRACT = '0x6b175474e89094c44da98b954eedeac495271d0f'
+const USDC_CONTRACT = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+const ABIs = new Map([[DAI_CONTRACT, ERC20ABI], [USDC_CONTRACT, ERC20ABI]])
 
 describe('ethFetcher', () => {
   let signer: Wallet
-  let provider: Provider
+  let provider: providers.BaseProvider
+
+  beforeAll(() => {
+    jest.setTimeout(20000)
+  })
+
+  afterAll(() => {
+    jest.setTimeout(5000)
+  })
+
   beforeEach(() => {
     provider = getDefaultProvider()
     signer = new Wallet(
@@ -31,7 +43,7 @@ describe('ethFetcher', () => {
         balance
       )
     })
-    it('returns multiple balances of the signer', async () => {
+    it('returns multiple balances', async () => {
       const balance = BigNumber.from(0)
       const fetcher = etherJsFetcher(provider)
       // SWR spreads the array when it invoke the fetcher
@@ -44,56 +56,58 @@ describe('ethFetcher', () => {
   describe('contract', () => {
     it('return the value', async () => {
       const balance = BigNumber.from(0)
-
-      const contract = '0x6b175474e89094c44da98b954eedeac495271d0f'
-      // const account = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
-      const ABIs = new Map([[contract, ERC20ABI]])
       const fetcher = etherJsFetcher(provider, ABIs)
       // SWR spreads the array when it invoke the fetcher
       await expect(
-        fetcher(...[contract, 'balanceOf', signer.address])
+        fetcher(...[DAI_CONTRACT, 'balanceOf', signer.address])
       ).resolves.toEqual(balance)
     })
 
     it('return the value from a specific block', async () => {
       const balance = BigNumber.from(0)
-
-      const contract = '0x6b175474e89094c44da98b954eedeac495271d0f'
-      // const account = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
-      const ABIs = new Map([[contract, ERC20ABI]])
       const fetcher = etherJsFetcher(provider, ABIs)
       // SWR spreads the array when it invoke the fetcher
       await expect(
         fetcher(
-          ...[contract, 'balanceOf', signer.address, { blockTag: 13589470 }]
+          ...[DAI_CONTRACT, 'balanceOf', signer.address, { blockTag: 13589470 }]
         )
       ).resolves.toEqual(balance)
     })
 
     it('return multiple values', async () => {
       const balance = BigNumber.from(0)
-      const contract = '0x6b175474e89094c44da98b954eedeac495271d0f'
-      const ABIs = new Map([[contract, ERC20ABI]])
       const fetcher = etherJsFetcher(provider, ABIs)
       // SWR spreads the array when it invoke the fetcher
       await expect(
-        fetcher(JSON.stringify([[contract, 'balanceOf', signer.address]]))
+        fetcher(JSON.stringify([[DAI_CONTRACT, 'balanceOf', signer.address]]))
       ).resolves.toEqual([balance])
     })
 
     it('return multiple values from a specific block', async () => {
       const balance = BigNumber.from(0)
-      const contract = '0x6b175474e89094c44da98b954eedeac495271d0f'
-      const ABIs = new Map([[contract, ERC20ABI]])
       const fetcher = etherJsFetcher(provider, ABIs)
       // SWR spreads the array when it invoke the fetcher
       await expect(
         fetcher(
           JSON.stringify([
-            [contract, 'balanceOf', signer.address, { blockTag: 13589470 }]
+            [DAI_CONTRACT, 'balanceOf', signer.address, { blockTag: 13589470 }]
           ])
         )
       ).resolves.toEqual([balance])
+    })
+
+    it('return multiple values from different blocks', async () => {
+      const balance = BigNumber.from(0)
+      const fetcher = etherJsFetcher(provider, ABIs)
+      // SWR spreads the array when it invoke the fetcher
+      await expect(
+        fetcher(
+          JSON.stringify([
+            [DAI_CONTRACT, 'balanceOf', signer.address, { blockTag: 13589470 }],
+            [USDC_CONTRACT, 'balanceOf', signer.address, { blockTag: 13589469 }]
+          ])
+        )
+      ).resolves.toEqual([balance, balance])
     })
   })
 })

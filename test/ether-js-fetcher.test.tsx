@@ -1,22 +1,19 @@
 import { etherJsFetcher } from '../src'
 import { BigNumber, Wallet } from 'ethers'
-import { BaseProvider, JsonRpcSigner } from '@ethersproject/providers'
 import { Contract } from '@ethersproject/contracts'
+import { JsonRpcSigner, BaseProvider, Provider } from '@ethersproject/providers'
 import TestABI from './util/test.abi.json'
-import {
-  Provider as EthCallProvider,
-  Call,
-  Contract as EthCallContract
-} from 'ethcall'
+import { providers } from '@0xsequence/multicall'
 
 jest.mock('@ethersproject/providers')
 jest.mock('@ethersproject/contracts')
-jest.mock('ethcall')
+jest.mock('@0xsequence/multicall')
 
 const ProviderMock = BaseProvider as jest.Mocked<typeof BaseProvider>
-const ethCallProviderMock = EthCallProvider as jest.Mock<EthCallProvider>
+
+const mockedMultiCallProvider = (providers.MulticallProvider as unknown) as jest.Mock
 const ContractMock = Contract as jest.Mocked<any>
-const ethContractMock = EthCallContract as jest.Mock<EthCallContract>
+// const mockedContract = (Contract as unknown) as jest.Mock
 const SignerMock = JsonRpcSigner as jest.Mocked<typeof JsonRpcSigner>
 
 const buildProviderMock = (balance = 1, transactionCount = 1) => {
@@ -71,23 +68,14 @@ describe('ethFetcher', () => {
       const provider = buildProviderMock(balance)
       const fetcher = etherJsFetcher(provider)
       // SWR spreads the array when it invoke the fetcher
-      await expect(fetcher(...['getBalance'])).resolves.toEqual(balance)
+      await expect(fetcher(...['getBalance', signer.address])).resolves.toEqual(
+        balance
+      )
     })
     it('returns multiple balances', async () => {
       const balance = 1
-      ethCallProviderMock.mockReturnValueOnce({
-        init: (provider: BaseProvider) => Promise.resolve(),
-        getEthBalance: (address: string) => ({
-          contract: {
-            address: ''
-          },
-          name: '',
-          inputs: [],
-          outputs: [],
-          params: []
-        }),
-        all: (call: any) => Promise.resolve([1]),
-        tryAll: (calls: Call[], block?: number) => Promise.resolve([])
+      mockedMultiCallProvider.mockReturnValue({
+        getBalance: () => Promise.resolve(balance)
       })
 
       const provider = buildProviderMock(balance)
@@ -125,27 +113,19 @@ describe('ethFetcher', () => {
         .mockImplementation(() => Promise.resolve(balance))
 
       const contract = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
-      const account = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
       const ABIs = new Map([[contract, TestABI]])
       const fetcher = etherJsFetcher(provider, ABIs)
       // SWR spreads the array when it invoke the fetcher
       await expect(
-        fetcher(...[contract, 'balanceOf', account])
+        fetcher(...[contract, 'balanceOf', signer.address])
       ).resolves.toEqual(balance)
     })
     it('return multiple values', async () => {
       const balance = 10
-      ethCallProviderMock.mockReturnValueOnce({
-        init: (provider: BaseProvider) => Promise.resolve(),
-        getEthBalance: (address: string) => null,
-        all: (call: any) => Promise.resolve([balance]),
-        tryAll: (calls: Call[], block?: number) => Promise.resolve([balance])
-      })
-
-      // workaround create a dynamic method
-      ethContractMock.prototype.balanceOf = jest
+      ContractMock.prototype.balanceOf = jest
         .fn()
         .mockImplementation(() => Promise.resolve(balance))
+
       const contract = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
       const account = '0x4592706f9e4E4292464967d16aa31c3d4a81a5A1'
       const ABIs = new Map([[contract, TestABI]])
