@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/aboutlo/ether-swr/compare/v1.0.0...v2.0.0) (2021-11-23)
+
+
+### Features
+
+* add multiCall calls ([1fa9181](https://github.com/aboutlo/ether-swr/commit/1fa9181c05d30b706b4ce77745784aef5c701d83))
+* drop signer from the fetcher ([dc8625c](https://github.com/aboutlo/ether-swr/commit/dc8625c3e282c78df43e8c5e396dea92876540be))
+* use 0xsequence to batch the calls ([dfdd3b3](https://github.com/aboutlo/ether-swr/commit/dfdd3b3cc9620a118442f914068629e3f6cf9f7c))
+
+
+### Bug Fixes
+
+* handle blockTag too ([1d1c9e9](https://github.com/aboutlo/ether-swr/commit/1d1c9e988d6e0ca755bbbe4ca7a34cd39726672a))
+
 ## [1.0.0](https://github.com/aboutlo/ether-swr/compare/v0.6.4...v1.0.0) (2021-10-08)
 
 
