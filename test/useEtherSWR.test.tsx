@@ -302,7 +302,7 @@ describe('useEtherSWR', () => {
     describe('base', () => {
       let mockedLibrary: EventEmitterMock
       beforeEach(() => {
-        mockedEthFetcher.mockReset()
+        jest.resetAllMocks()
         mockedLibrary = mockUseWeb3React(mockeduseWeb3React)
       })
       afterEach(cleanup)
@@ -376,12 +376,12 @@ describe('useEtherSWR', () => {
         })
 
         await waitFor(() => {
-          expect(container.firstChild.textContent).toEqual(
-            `Balance, ${finalData}`
-          )
           expect(fetcher).toHaveBeenNthCalledWith(1, method)
           expect(fetcher).toHaveBeenNthCalledWith(2, method)
           expect(mockedLibrary.listenerCount('block')).toEqual(1)
+          expect(container.firstChild.textContent).toEqual(
+            `Balance, ${finalData}`
+          )
         })
       })
       it('listens a list of events and invoke the callback', async () => {

@@ -3,6 +3,8 @@ import { Contract } from '@ethersproject/contracts'
 import { isAddress } from '@ethersproject/address'
 import { ABIError, ABINotFound } from './Errors'
 import { providers } from '@0xsequence/multicall'
+import { Provider } from '@ethersproject/abstract-provider'
+import { Web3Provider } from './types'
 
 const isObject = obj => {
   return typeof obj === 'object' && !Array.isArray(obj) && obj !== null
@@ -25,12 +27,16 @@ const parseParams = params => {
   return { params: [address, method, otherParams], extended }
 }
 export const contracts = new Map<string, Contract>()
-export function getContract(address: string, abi: ContractInterface): Contract {
+export function getContract(
+  address: string,
+  abi: ContractInterface,
+  provider: Provider | Web3Provider
+): Contract {
   let contract = contracts.get(address)
   if (contract) {
     return contract
   }
-  contract = new Contract(address, abi)
+  contract = new Contract(address, abi, provider as Provider)
   contracts.set(address, contract)
   return contract
 }

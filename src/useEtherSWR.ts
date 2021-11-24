@@ -20,7 +20,7 @@ const buildContract = (target: string, config: EthSWRConfigInterface) => {
   if (!abi) {
     throw new ABINotFound(`Missing ABI for ${target}`)
   }
-  return getContract(target, abi)
+  return getContract(target, abi, config.web3Provider)
 }
 
 function useEtherSWR<Data = any, Error = any>(
@@ -95,14 +95,15 @@ function useEtherSWR<Data = any, Error = any>(
       const internalKey = unstable_serialize(normalizeKey)
       if (typeof subscribe === 'string') {
         filter = subscribe
-        // TODO LS this depends on etherjs
         instance.on(filter, () => {
           // console.log('on(string):', { filter }, Array.from(cache.keys()))
           mutate(internalKey, undefined, true)
         })
       } else if (typeof subscribe === 'object' && !Array.isArray(subscribe)) {
-        const { name, on } = subscribe
-        filter = name
+        const { name, topics, on } = subscribe
+        const args = topics || []
+        filter = contract ? contract.filters[name](...args) : name
+        // console.log('subscribe:', filter)
         instance.on(filter, (...args) => {
           if (on) {
             // console.log('on(object):', { filter }, Array.from(cache.keys()))
